@@ -304,11 +304,8 @@
 </template>
 
 <script setup>
-import Menu from "@/components/Menu.vue";
 import { ref, getCurrentInstance, h, computed, watch } from "vue";
 import { NButton, useNotification, useDialog } from "naive-ui";
-import ProjectView from "./ProjectView.vue";
-import { FmdBadTwotone } from "@vicons/material";
 
 const createStatus = ref(false);
 
@@ -321,7 +318,7 @@ const columns = ref([
   {
     type: "selection",
   },
-  { title: "项目名称", key: "ProjectID", width: 120 },
+  { title: "项目名称", key: "ProjectName", width: 120 },
   { title: "卡密", key: "Key", width: 360 },
   { title: "创建时间", key: "CreatedAt" },
   { title: "过期时间", key: "EndDate" },
@@ -355,8 +352,8 @@ const columns = ref([
       }`;
     },
   },
-  { title: "更新时间", key: "UpdatedAt" },
-  //   { title: "归属用户", key: "UserID" },
+  //   { title: "更新时间", key: "UpdatedAt" },
+  { title: "归属用户", key: "UserName" },
   {
     title: "操作",
     key: "actions",
@@ -373,7 +370,7 @@ const columns = ref([
   },
 ]);
 
-const userRole = ref(0);
+// const userRole = ref(0);
 const parseJwt = (token) => {
   try {
     const base64Url = token.split(".")[1];
@@ -395,16 +392,16 @@ const getUserInfo = () => {
   if (!data) {
     return;
   }
-  userRole.value = data.role;
+  //   userRole.value = data.role;
 };
 getUserInfo();
 
-if (userRole.value <= 1) {
-  columns.value.splice(columns.value.length - 1, 0, {
-    title: "归属用户",
-    key: "UserID",
-  });
-}
+// if (userRole.value <= 1) {
+//   columns.value.splice(columns.value.length - 1, 0, {
+//     title: "归属用户",
+//     key: "UserID",
+//   });
+// }
 // 变量定义
 const tableKey = ref(0);
 const page = ref(1);
@@ -491,20 +488,6 @@ const openCreateCard = () => {
   createStatus.value = true;
 };
 
-const pagination = computed(() => ({
-  page: page.value,
-  pageSize: pageSize.value,
-  itemCount: itemCount.value,
-  onChange: (newPage) => {
-    page.value = newPage;
-    getCardList();
-  },
-  //   onUpdatePageSize: (newPageSize) => {
-  //     pageSize.value = newPageSize;
-  //     page.value = 1;
-  //   },
-}));
-
 const deleteCard = (row) => {
   axios
     .delete("/api/card/delete", {
@@ -534,11 +517,14 @@ const batchDeleteCard = () => {
         "信息",
         "成功删除" + paginationCheckKeys.value.length + "张卡密"
       );
-      getCardList();
+      var page_number;
+      if (page.value == itemCount.value) {
+        page_number = page.value - 1;
+      }
+      getCardList(page_number);
     })
     .catch((err) => {
       console.log(err);
-
       notify("error", "错误", err.response.data.msg);
     });
 };
@@ -563,7 +549,7 @@ const getUserList = () => {
 };
 getUserList();
 // 获取所有卡密
-const getCardList = () => {
+const getCardList = (page_number) => {
   paginationCheckKeys.value = [];
   tableKey.value++;
   if (
@@ -588,11 +574,11 @@ const getCardList = () => {
       projectID = searchProjectData.value[0].ID;
     }
   }
-
+  page_number = page_number || page.value;
   axios
     .get(
       "/api/card/getList?page=" +
-        page.value +
+        page_number +
         "&pageSize=" +
         pageSize.value +
         "&key=" +
@@ -614,7 +600,7 @@ const getCardList = () => {
         // 使用 toISOString() 将日期转换为 ISO 8601 格式字符串，然后截取所需部分
         if (item.EndDate) {
           if (item.EndDate == "0001-01-01T00:00:00Z") {
-            item.EndDate = "暂未激活";
+            item.EndDate = "暂未使用或激活";
           } else {
             item.EndDate = new Date(item.EndDate)
               .toLocaleString()
@@ -640,8 +626,11 @@ const getCardList = () => {
         }
       });
       data.value = res.data.list;
-      getProjectName();
+      //   getProjectName();
       itemCount.value = res.data.total;
+      if (page_number != page.value) {
+        page.value = page_number;
+      }
     })
     .catch((err) => {
       console.log(err);
