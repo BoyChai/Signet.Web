@@ -38,6 +38,38 @@
       <n-grid style="margin-top: 15px" x-gap="12" :cols="2">
         <n-gi>
           <div style="display: flex; align-items: center">
+            <span style="font-size: 15px; font-weight: 500">卡密种类：</span>
+            <n-space>
+              <n-radio
+                :checked="getCardType === 99999"
+                value="99999"
+                name="getCardType"
+                @change="changeGetCardType"
+              >
+                所有
+              </n-radio>
+              <n-radio
+                :checked="getCardType === 0"
+                value="0"
+                name="getCardType"
+                @change="changeGetCardType"
+              >
+                时卡 </n-radio
+              ><n-radio
+                :checked="getCardType === 1"
+                value="1"
+                name="getCardType"
+                @change="changeGetCardType"
+              >
+                次卡
+              </n-radio>
+            </n-space>
+          </div>
+        </n-gi>
+      </n-grid>
+      <n-grid style="margin-top: 15px" x-gap="12" :cols="2">
+        <n-gi>
+          <div style="display: flex; align-items: center">
             <span style="font-size: 15px; font-weight: 500"
               >卡密是否已激活：</span
             >
@@ -102,6 +134,7 @@
           </div>
         </n-gi>
       </n-grid>
+
       <n-grid style="margin-top: 15px" x-gap="12" :cols="2">
         <n-gi>
           <div style="display: flex; align-items: center">
@@ -208,78 +241,97 @@
         clearable
       />
       <div style="height: 15px"></div>
-      <n-radio
-        :checked="date === '一天'"
-        value="一天"
-        name="date"
-        @change="setCardOften"
-      >
-        一天
-      </n-radio>
-      <n-radio
-        :checked="date === '一周'"
-        value="一周"
-        name="date"
-        @change="setCardOften"
-      >
-        一周
-      </n-radio>
-      <n-radio
-        :checked="date === '一个月'"
-        value="一个月"
-        name="date"
-        @change="setCardOften"
-      >
-        一个月
-      </n-radio>
-      <n-radio
-        :checked="date === '补卡'"
-        value="补卡"
-        name="date"
-        @change="setCardOften"
-      >
-        补卡
-      </n-radio>
-      <n-radio
-        :checked="date === '其他时间'"
-        value="其他时间"
-        name="date"
-        @change="setCardOften"
-      >
-        其他时间
-      </n-radio>
-      <!-- 如果选择了"补卡"，则显示输入框 -->
-      <n-time-picker
-        v-if="date === '补卡'"
-        style="margin-top: 10px"
-        default-formatted-value="00:00:00"
-        :on-update:value="setInjuryDate"
-      />
-      <n-input
-        v-if="date === '其他时间'"
-        style="margin-top: 10px"
-        placeholder="格式为天-时-分-秒,例如:`1-2-3`为1天2小时3分0秒"
-        v-model:value="otherDate"
-      />
+      <div v-if="cardType == 0">
+        <n-radio
+          :checked="date === '一天'"
+          value="一天"
+          name="date"
+          @change="setCardOften"
+        >
+          一天
+        </n-radio>
+        <n-radio
+          :checked="date === '一周'"
+          value="一周"
+          name="date"
+          @change="setCardOften"
+        >
+          一周
+        </n-radio>
+        <n-radio
+          :checked="date === '一个月'"
+          value="一个月"
+          name="date"
+          @change="setCardOften"
+        >
+          一个月
+        </n-radio>
+        <n-radio
+          :checked="date === '补卡'"
+          value="补卡"
+          name="date"
+          @change="setCardOften"
+        >
+          补卡
+        </n-radio>
+        <n-radio
+          :checked="date === '其他时间'"
+          value="其他时间"
+          name="date"
+          @change="setCardOften"
+        >
+          其他时间
+        </n-radio>
+        <!-- 如果选择了"补卡"，则显示输入框 -->
+        <n-time-picker
+          v-if="date === '补卡'"
+          style="margin-top: 10px"
+          default-formatted-value="00:00:00"
+          :on-update:value="setInjuryDate"
+        />
+        <n-input
+          v-if="date === '其他时间'"
+          style="margin-top: 10px"
+          placeholder="格式为天-时-分-秒,例如:`1-2-3`为1天2小时3分0秒"
+          v-model:value="otherDate"
+        />
+
+        <div style="height: 15px"></div>
+        <n-radio
+          :checked="immediately === false"
+          value="false"
+          name="immediately"
+          @change="setImmediately"
+        >
+          激活后计时
+        </n-radio>
+        <n-radio
+          :checked="immediately === true"
+          value="true"
+          name="immediately"
+          @change="setImmediately"
+        >
+          即时计时
+        </n-radio>
+      </div>
 
       <div style="height: 15px"></div>
       <n-radio
-        :checked="immediately === false"
-        value="false"
-        name="immediately"
-        @change="setImmediately"
+        :checked="cardType === 0"
+        value="0"
+        name="cardType"
+        @change="setCardType"
       >
-        激活后计时
+        时卡
       </n-radio>
       <n-radio
-        :checked="immediately === true"
-        value="true"
-        name="immediately"
-        @change="setImmediately"
+        :checked="cardType === 1"
+        value="1"
+        name="cardType"
+        @change="setCardType"
       >
-        即时计时
+        次卡
       </n-radio>
-
       <div style="margin-top: 20px">
         <n-input
           v-model:value="quantity"
@@ -326,10 +378,14 @@ const columns = ref([
     title: "卡密时长",
     key: "Duration",
     render(row) {
+      if (row.Type == 1) {
+        return "次卡";
+      }
       const days = Math.floor(row.Duration / (24 * 3600)); // 计算天数
       const hours = Math.floor((row.Duration % (24 * 3600)) / 3600); // 计算小时数
       const minutes = Math.floor((row.Duration % 3600) / 60); // 计算分钟数
       const seconds = row.Duration % 60; // 计算秒数
+
       if (row.Duration <= 3600) {
         return `补卡-${minutes}分${seconds > 0 ? `${seconds}秒` : "整"}`;
       }
@@ -412,6 +468,7 @@ const itemCount = ref(0);
 const createCardListResp = ref("");
 const quantity = ref(1);
 const userMap = ref([]);
+const getCardType = ref(99999);
 const checkedEffective = ref("1");
 const checkedActivation = ref("0");
 const searchKey = ref("");
@@ -592,7 +649,9 @@ const getCardList = (page_number) => {
         "&expire=" +
         timeSelectUnix.value +
         "&projectID=" +
-        projectID
+        projectID +
+        "&cardType=" +
+        getCardType.value
     )
     .then((res) => {
       // 遍历数组，处理 EndDate 字段
@@ -650,6 +709,11 @@ const date = ref("一天");
 const immediately = ref(false);
 const setCardOften = (e) => {
   date.value = e.target.value;
+};
+const cardType = ref(0);
+
+const setCardType = (e) => {
+  cardType.value = parseInt(e.target.value);
 };
 const setImmediately = (e) => {
   if (e.target.value == "true") {
@@ -729,11 +793,7 @@ const getTimeInSeconds = (date) => {
 };
 
 const createCard = () => {
-  // 项目id确认
-  //   if (projectData.value.length == 0) {
-  //     notify("error", "错误", "请先选择正确的项目");
-  //     return;
-  //   }
+  console.log(cardType.value);
 
   if (projectSelectValue.value !== "" && projectData.value.length === 0) {
     notify("error", "错误", "请先选择正确的项目");
@@ -768,7 +828,8 @@ const createCard = () => {
           prefix: prefix.value,
           time: targetTimestamp,
           immediately: immediately.value,
-          projectID: projectID,
+          project_id: projectID,
+          card_type: cardType.value,
         })
         .then((res) => {
           createCardListResp.value += res.data + "\n";
@@ -796,10 +857,10 @@ const createCard = () => {
     .post("/api/card/create", {
       prefix: prefix.value,
       key: key.value,
-      //   time: datetime.value / 1000,
       time: targetTimestamp,
       immediately: immediately.value,
       projectID: projectID,
+      card_type: cardType.value,
     })
     .then((res) => {
       createCardListResp.value = "";
@@ -868,7 +929,10 @@ const ChangeCheckedActivation = (key) => {
 const changeEffective = (key) => {
   checkedEffective.value = key.target.value;
 };
-
+// 卡密的种类
+const changeGetCardType = (key) => {
+  getCardType.value = parseInt(key.target.value);
+};
 // 搜索项目
 const searchProject = (key, t) => {
   axios
