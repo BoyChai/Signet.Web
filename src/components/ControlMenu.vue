@@ -91,24 +91,26 @@ const menuOptions = computed(() =>
     },
     {
       label: () =>
+        h(
+          RouterLink,
+          { to: { name: "record" } },
+          { default: () => "使用记录" }
+        ),
+      key: "record",
+      icon: renderIcon(IosCheckboxOutline),
+    },
+    {
+      label: () =>
         h(RouterLink, { to: { name: "info" } }, { default: () => "服务信息" }),
       key: "info",
       icon: renderIcon(MdInformationCircleOutline),
     },
+
     {
       label: "数据统计",
       key: "develop",
       icon: renderIcon(IosCheckboxOutline),
       children: [
-        {
-          label: () =>
-            h(
-              RouterLink,
-              { to: { name: "develop" } },
-              { default: () => "代理数据" }
-            ),
-          key: "develop",
-        },
         {
           label: () =>
             h(

@@ -164,6 +164,7 @@
       <n-gi>
         <n-card
           title="当天激活卡密(10条)"
+          style="height: 135%"
           :segmented="{
             content: true,
           }"
@@ -194,6 +195,7 @@
       ><n-gi>
         <n-card
           title="当天过期卡密列表(10条)"
+          style="height: 135%"
           :segmented="{
             content: true,
           }"
@@ -223,6 +225,7 @@
       ><n-gi>
         <n-card
           title="当天激活记录(10条)"
+          style="height: 135%"
           :segmented="{
             content: true,
           }"

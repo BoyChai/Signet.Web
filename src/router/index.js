@@ -26,6 +26,12 @@ const routes = [
     component: () => import("../views/CardView.vue"),
   },
   {
+    path: "/record",
+    name: "record",
+    meta: { breadcrumb: ["使用记录"] },
+    component: () => import("../views/RecordView.vue"),
+  },
+  {
     path: "/login",
     name: "login",
     component: () => import("../views/LoginView.vue"),
