@@ -32,6 +32,12 @@ const routes = [
     component: () => import("../views/RecordView.vue"),
   },
   {
+    path: "/apikey",
+    name: "apikey",
+    meta: { breadcrumb: ["API密钥"] },
+    component: () => import("../views/ApiKeyView.vue"),
+  },
+  {
     path: "/login",
     name: "login",
     component: () => import("../views/LoginView.vue"),

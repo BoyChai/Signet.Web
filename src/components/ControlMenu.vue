@@ -18,6 +18,7 @@ import { IosContacts } from "@vicons/ionicons4";
 import { IosCard } from "@vicons/ionicons4";
 import { IosCube } from "@vicons/ionicons4";
 import { IosCheckboxOutline } from "@vicons/ionicons4";
+import { MdKey } from "@vicons/ionicons4";
 import { MdInformationCircleOutline } from "@vicons/ionicons4";
 import { useRoute } from "vue-router";
 const route = useRoute();
@@ -91,6 +92,12 @@ const menuOptions = computed(() =>
     },
     {
       label: () =>
+        h(RouterLink, { to: { name: "apikey" } }, { default: () => "API密钥" }),
+      key: "apikey",
+      icon: renderIcon(MdKey),
+    },
+    {
+      label: () =>
         h(
           RouterLink,
           { to: { name: "record" } },
@@ -106,22 +113,22 @@ const menuOptions = computed(() =>
       icon: renderIcon(MdInformationCircleOutline),
     },
 
-    {
-      label: "数据统计",
-      key: "develop",
-      icon: renderIcon(IosCheckboxOutline),
-      children: [
-        {
-          label: () =>
-            h(
-              RouterLink,
-              { to: { name: "develop" } },
-              { default: () => "校验统计" }
-            ),
-          key: "develop-statistics",
-        },
-      ],
-    },
+    // {
+    //   label: "数据统计",
+    //   key: "develop",
+    //   icon: renderIcon(IosCheckboxOutline),
+    //   children: [
+    //     {
+    //       label: () =>
+    //         h(
+    //           RouterLink,
+    //           { to: { name: "develop" } },
+    //           { default: () => "校验统计" }
+    //         ),
+    //       key: "develop-statistics",
+    //     },
+    //   ],
+    // },
   ].filter(
     (option) =>
       userRole.value <= 1 || // 小于或等于1展示所有
