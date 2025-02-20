@@ -1,93 +1,83 @@
 <template>
-  <div style="background-color: #f5f7f9; padding: 20px">
+  <div class="page-wrapper">
     <n-card
       title="服务信息"
+      class="info-card"
       :header-style="{ textAlign: 'left', fontSize: '24px', fontWeight: '600' }"
-      :segmented="{ content: true }"
-      style="
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      "
+      :bordered="false"
     >
-      <n-grid x-gap="12" :cols="3">
+      <n-grid :cols="gridCols" :x-gap="8" :y-gap="8" responsive="screen">
         <n-gi>
-          <div class="card">
-            <div class="card-title">数据信息</div>
-            <ul class="list">
-              <li class="list-item key-value">
-                <div>数据库类型</div>
-                <div>{{ info.sql_type }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>数据库主机</div>
-                <div>{{ info.sql_host }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>数据库名称</div>
-                <div>{{ info.db_name }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>数据库端口</div>
-                <div>{{ info.db_port }}</div>
-              </li>
-            </ul>
+          <div class="info-section">
+            <h3 class="section-title">数据信息</h3>
+            <n-space vertical size="small">
+              <n-space justify="space-between" align="center">
+                <span class="label">数据库类型:</span>
+                <span class="value">{{ info.sql_type || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">数据库主机:</span>
+                <span class="value">{{ info.sql_host || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">数据库名称:</span>
+                <span class="value">{{ info.db_name || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">数据库端口:</span>
+                <span class="value">{{ info.db_port || "未知" }}</span>
+              </n-space>
+            </n-space>
           </div>
         </n-gi>
         <n-gi>
-          <div class="card">
-            <div class="card-title">连接信息</div>
-            <ul class="list">
-              <li class="list-item key-value">
-                <div>HTTP</div>
-                <div>开启</div>
-              </li>
-              <li class="list-item key-value">
-                <div>Socket</div>
-                <div>{{ getStartStatus(info.socket_enabled) }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>HTTP端口</div>
-                <div>{{ info.svc_port }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>Socket端口</div>
-                <div>{{ info.socket_port }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>Socket超时时间</div>
-                <div>{{ info.socket_timeout }}</div>
-              </li>
-              <li class="list-item key-value">
-                <div>超级管理员</div>
-                <div>{{ info.super_user_name }}</div>
-              </li>
-            </ul>
+          <div class="info-section">
+            <h3 class="section-title">连接信息</h3>
+            <n-space vertical size="small">
+              <n-space justify="space-between" align="center">
+                <span class="label">HTTP:</span>
+                <span class="value">开启</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">Socket:</span>
+                <span class="value">{{
+                  getStartStatus(info.socket_enabled)
+                }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">HTTP端口:</span>
+                <span class="value">{{ info.svc_port || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">Socket端口:</span>
+                <span class="value">{{ info.socket_port || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">Socket超时时间:</span>
+                <span class="value">{{ info.socket_timeout || "未知" }}</span>
+              </n-space>
+              <n-space justify="space-between" align="center">
+                <span class="label">超级管理员:</span>
+                <span class="value">{{ info.super_user_name || "未知" }}</span>
+              </n-space>
+            </n-space>
           </div>
         </n-gi>
         <n-gi>
-          <div class="card">
-            <div class="card-title">服务公钥</div>
-            <div
-              style="
-                height: 200px;
-                overflow-y: auto;
-                border: 1px solid #d0d0d0;
-                padding: 10px;
-                background-color: #f0f0f0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-              "
-            >
-              <pre
-                style="
-                  white-space: pre-wrap;
-                  word-wrap: break-word;
-                  text-align: left;
-                "
-                >{{ info.public_key }}</pre
+          <div class="info-section">
+            <h3 class="section-title">服务公钥</h3>
+            <div class="public-key-container">
+              <pre class="public-key-text">{{
+                info.public_key || "暂无公钥"
+              }}</pre>
+              <n-button
+                size="small"
+                type="primary"
+                class="copy-btn"
+                @click="copyPublicKey"
               >
+                复制
+              </n-button>
             </div>
           </div>
         </n-gi>
@@ -97,57 +87,185 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
 import { ref, getCurrentInstance } from "vue";
+import { useNotification } from "naive-ui";
+
+const notification = useNotification();
+const notify = (type, title, text) => {
+  notification[type]({
+    content: title,
+    meta: text,
+    duration: 2500,
+    keepAliveOnHover: true,
+  });
+};
 
 const { proxy } = getCurrentInstance();
 const axios = proxy.$axios;
-const info = ref("");
+
+const info = ref({});
+
 const getAppInfo = () => {
   axios
     .get("/api/stats/app_info")
     .then((res) => {
-      info.value = res.data;
+      info.value = res.data || {};
       console.log(info.value);
     })
     .catch((err) => {
-      notify("error", "错误", err.request.response);
+      notify("error", "错误", err.request?.response || "获取服务信息失败");
     });
 };
 getAppInfo();
+
 const getStartStatus = (t) => (t ? "开启" : "关闭");
+
+const copyPublicKey = () => {
+  if (!info.value.public_key) {
+    notify("warning", "提示", "暂无公钥可复制");
+    return;
+  }
+  navigator.clipboard
+    .writeText(info.value.public_key)
+    .then(() => {
+      notify("success", "成功", "公钥已复制到剪贴板");
+    })
+    .catch(() => {
+      notify("error", "错误", "复制失败，请手动复制");
+    });
+};
+
+// 响应式网格列数
+const gridCols = {
+  xs: 1, // 小于 640px，1列
+  s: 1, // 小于 1024px，1列
+  m: 2, // 小于 1440px，2列
+  l: 3, // 大于等于 1440px，3列
+};
 </script>
 
-<style>
-.card {
-  background-color: #fff;
+<style scoped>
+.page-wrapper {
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #d0d0d0;
-  transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 100vh;
+  background: #f5f7f9;
+  overflow-y: auto; /* 确保页面可滚动 */
 }
-.card:hover {
+
+.info-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: white;
+  transition: transform 0.3s ease;
+}
+
+.info-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
-.card-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #333;
+
+.info-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e8ecef;
+  transition: box-shadow 0.3s ease;
+  min-height: 250px; /* 确保卡片高度一致，减少垂直空白 */
 }
-.key-value {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
+
+.info-section:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
-.list {
-  padding: 0;
-  list-style: none;
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 12px;
 }
-.list-item {
-  margin-bottom: 6px;
+
+.label {
+  font-size: 14px;
   color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.value {
+  font-size: 14px;
+  color: #333;
+  text-align: right;
+  overflow-wrap: break-word;
+  max-width: 60%; /* 限制值宽度，避免溢出 */
+}
+
+.public-key-container {
+  position: relative;
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e8ecef;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.public-key-text {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 10px;
+  }
+
+  .info-card {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  .info-section {
+    padding: 12px;
+    min-height: auto; /* 手机端移除最小高度 */
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .label,
+  .value {
+    font-size: 12px;
+  }
+
+  .value {
+    max-width: 50%;
+  }
+
+  .public-key-container {
+    height: 150px;
+    padding: 10px;
+  }
+
+  .public-key-text {
+    font-size: 12px;
+  }
+
+  .copy-btn {
+    top: 6px;
+    right: 6px;
+  }
 }
 </style>
