@@ -7,7 +7,7 @@
       class="main-card"
     >
       <n-grid x-gap="12" :cols="colsConfig" class="stats-grid">
-        <n-gi v-for="(stat, index) in stats" :key="index">
+        <n-gi v-for="(stat, index) in computedStats" :key="index">
           <n-card
             :title="stat.title"
             :header-style="{ textAlign: 'left', fontSize: '18px' }"
@@ -15,11 +15,7 @@
             class="stat-card"
           >
             <n-statistic :label="stat.label" tabular-nums>
-              <n-number-animation
-                ref="numberAnimationInstRef"
-                :from="0"
-                :to="stat.value"
-              />
+              <n-number-animation :from="0" :to="Number(stat.value)" />
               <template #suffix>{{ stat.suffix }}</template>
             </n-statistic>
             <n-space vertical class="stat-desc">
@@ -29,9 +25,8 @@
         </n-gi>
       </n-grid>
 
-      <!-- 第二排：表格区域 -->
       <n-grid x-gap="12" :cols="tableColsConfig" class="table-grid">
-        <n-gi v-for="(table, index) in tables" :key="index">
+        <n-gi v-for="(table, index) in computedTables" :key="index">
           <n-card
             :title="table.title"
             :segmented="{ content: true }"
@@ -64,24 +59,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, getCurrentInstance } from "vue"; // 显式导入 getCurrentInstance
 
-const totalKeys = ref("0");
-const createdToday = ref("0");
-const activatedToday = ref("0");
-const expiredToday = ref("0");
-const expiredWithinDay = ref("0");
-const unactivatedKeys = ref("0");
-const totalUsageCount = ref("0");
+const totalKeys = ref(0);
+const createdToday = ref(0);
+const activatedToday = ref(0);
+const expiredToday = ref(0);
+const expiredWithinDay = ref(0);
+const unactivatedKeys = ref(0);
+const totalUsageCount = ref(0);
+const ActiveCard = ref([]);
+const ExpiredCard = ref([]);
+const TodaysActiveRecords = ref([]);
 
-const numberAnimationInstRef = ref(null);
-
-import { getCurrentInstance } from "vue";
-
-const { proxy } = getCurrentInstance();
-const axios = proxy.$axios;
+// 获取组件实例
+const instance = getCurrentInstance();
+const axios = instance?.proxy.$axios; // 使用 optional chaining 防止 instance 未定义
 
 const formatDate = (date) => {
+  if (!date) return "暂无数据";
   const d = new Date(date);
   const hours = d.getHours().toString().padStart(2, "0");
   const minutes = d.getMinutes().toString().padStart(2, "0");
@@ -89,13 +85,19 @@ const formatDate = (date) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-// 定义 ref 变量
-const ActiveCard = ref([]);
-const ExpiredCard = ref([]);
-const TodaysActiveRecords = ref([]);
+const RecordTypeString = {
+  0: "卡密激活",
+  1: "设备绑定",
+  2: "解绑成功",
+  3: "解绑失败",
+  4: "校验成功",
+  5: "校验失败",
+};
 
-// AI: 统计数据
-const stats = [
+const mapRecordType = (type) => RecordTypeString[type] || "未知类型";
+const getActiveType = (t) => (t > 0 ? "激活" : "即时");
+
+const computedStats = computed(() => [
   {
     title: "本站托管卡密总数",
     value: totalKeys.value,
@@ -145,149 +147,88 @@ const stats = [
     suffix: " 次使用",
     description: "每一次使用，都是对你辛劳的最好肯定。",
   },
-];
+]);
 
-// AI: 表格数据，使用 computed 动态计算
-const tables = computed(() => [
+const computedTables = computed(() => [
   {
     title: "当天激活卡密(10条)",
     headers: ["卡密ID", "激活时间"],
-    data:
-      ActiveCard.value?.map((v) => [v.CardID, formatDate(v.CreatedAt)]) || [],
+    data: ActiveCard.value.map((v) => [
+      v.CardID || "暂无",
+      formatDate(v.CreatedAt),
+    ]),
   },
   {
     title: "当天过期卡密列表(10条)",
     headers: ["卡密ID", "激活类型", "过期时间"],
-    data:
-      ExpiredCard.value?.map((v) => [
-        v.Key,
-        getActiveType(v.Duration),
-        formatDate(v.EndDate),
-      ]) || [],
+    data: ExpiredCard.value.map((v) => [
+      v.Key || "暂无",
+      getActiveType(v.Duration),
+      formatDate(v.EndDate),
+    ]),
   },
   {
     title: "当天激活记录(10条)",
     headers: ["卡密ID", "操作类型", "执行时间", "详情"],
-    data:
-      TodaysActiveRecords.value?.map((v) => [
-        v.CardID,
-        mapRecordType(v.Type),
-        formatDate(v.CreatedAt),
-        v.Details,
-      ]) || [],
+    data: TodaysActiveRecords.value.map((v) => [
+      v.CardID || "暂无",
+      mapRecordType(v.Type),
+      formatDate(v.CreatedAt),
+      v.Details || "无",
+    ]),
   },
 ]);
 
-const colsConfig = ref("1 600:2 900:3 1200:4"); // 响应式列数
-const tableColsConfig = ref("1 900:2 1200:3"); // 表格区域响应式列数
+const colsConfig = "1 600:2 900:3 1200:4";
+const tableColsConfig = "1 900:2 1200:3";
 
-const RecordTypeString = {
-  0: "卡密激活",
-  1: "设备绑定",
-  2: "解绑成功",
-  3: "解绑失败",
-  4: "校验成功",
-  5: "校验失败",
-};
-// 映射函数
-const mapRecordType = (type) => {
-  return RecordTypeString[type] || "未知类型";
-};
-// 激活类型
-const getActiveType = (t) => {
-  if (t > 0) {
-    return "激活";
-  } else {
-    return "即时";
+const fetchData = async (url, refVar) => {
+  if (!axios) {
+    console.error("Axios is not available");
+    return;
+  }
+  try {
+    const res = await axios.get(url);
+    refVar.value = res.data || (Array.isArray(refVar.value) ? [] : 0);
+  } catch (err) {
+    console.error(`Error fetching ${url}:`, err.response?.data || err.message);
   }
 };
-// 获取个人面板信息
-const getCardkeyStats = () => {
-  axios
-    .get("/api/stats/cardkey")
-    .then((res) => {
-      totalKeys.value = res.data.total_keys;
-      createdToday.value = res.data.created_today;
-      activatedToday.value = res.data.activated_today;
-      expiredToday.value = res.data.expired_today;
-      expiredWithinDay.value = res.data.expired_within_a_day;
-      unactivatedKeys.value = res.data.unactivated_keys;
-      totalUsageCount.value = res.data.total_usage_count;
-    })
-    .catch((err) => {
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Status:", err.response.status);
-        console.error("Headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Error request:", err.request);
-      } else {
-        console.error("Error message:", err.message);
-      }
-    });
-};
-// 获取当天要过期的卡密
-const getExpiredCard = () => {
-  axios
-    .get("/api/stats/expired_cards")
-    .then((res) => {
-      ExpiredCard.value = res.data;
-    })
-    .catch((err) => {
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Status:", err.response.status);
-        console.error("Headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Error request:", err.request);
-      } else {
-        console.error("Error message:", err.message);
-      }
-    });
-};
-// 获取当天激活的卡密
-const getActiveCard = () => {
-  axios
-    .get("/api/stats/active_cards")
-    .then((res) => {
-      ActiveCard.value = res.data;
-    })
-    .catch((err) => {
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Status:", err.response.status);
-        console.error("Headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Error request:", err.request);
-      } else {
-        console.error("Error message:", err.message);
-      }
-    });
-};
-// 获取当天激活记录
-const getTodaysActiveRecords = () => {
-  axios
-    .get("/api/stats/todays_active_records")
-    .then((res) => {
-      TodaysActiveRecords.value = res.data;
-    })
-    .catch((err) => {
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Status:", err.response.status);
-        console.error("Headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Error request:", err.request);
-      } else {
-        console.error("Error message:", err.message);
-      }
-    });
+
+const getCardkeyStats = async () => {
+  if (!axios) {
+    console.error("Axios is not available");
+    return;
+  }
+  try {
+    const res = await axios.get("/api/stats/cardkey");
+    totalKeys.value = res.data.total_keys || 0;
+    createdToday.value = res.data.created_today || 0;
+    activatedToday.value = res.data.activated_today || 0;
+    expiredToday.value = res.data.expired_today || 0;
+    expiredWithinDay.value = res.data.expired_within_a_day || 0;
+    unactivatedKeys.value = res.data.unactivated_keys || 0;
+    totalUsageCount.value = res.data.total_usage_count || 0;
+  } catch (err) {
+    console.error(
+      "Error fetching cardkey stats:",
+      err.response?.data || err.message
+    );
+  }
 };
 
-getCardkeyStats();
-getExpiredCard();
-getActiveCard();
-getTodaysActiveRecords();
+onMounted(async () => {
+  if (!axios) {
+    console.error("Cannot fetch data: Axios is not initialized");
+    return;
+  }
+  await Promise.all([
+    getCardkeyStats(),
+    fetchData("/api/stats/expired_cards", ExpiredCard),
+    fetchData("/api/stats/active_cards", ActiveCard),
+    fetchData("/api/stats/todays_active_records", TodaysActiveRecords),
+  ]);
+});
 </script>
 
 <style scoped>
@@ -309,6 +250,7 @@ getTodaysActiveRecords();
 }
 
 .stat-card {
+  margin-top: 5px;
   border-radius: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   background-color: #fff;
@@ -336,16 +278,16 @@ getTodaysActiveRecords();
   background-color: #fff;
 }
 
-n-table {
+.n-table {
   font-size: 14px;
 }
 
-n-table th {
+.n-table th {
   background-color: #fafafa;
   font-weight: 600;
 }
 
-n-table td {
+.n-table td {
   padding: 8px;
 }
 
@@ -354,7 +296,6 @@ n-table td {
   text-align: center;
 }
 
-/* 响应式调整 */
 @media (max-width: 600px) {
   .dashboard-container {
     padding: 8px;
@@ -373,11 +314,11 @@ n-table td {
     margin-bottom: 12px;
   }
 
-  n-table {
+  .n-table {
     font-size: 12px;
   }
 
-  n-table td {
+  .n-table td {
     padding: 6px;
   }
 }
