@@ -8,17 +8,94 @@
     >
       <!-- 筛选条件区域 -->
       <div class="filter-section">
-        <n-grid :cols="filterColsConfig" x-gap="12" y-gap="16">
+        <n-grid :cols="1" x-gap="12" y-gap="16">
           <n-gi>
             <div class="filter-item">
               <span class="filter-label">卡密查询：</span>
               <n-input
                 v-model:value="searchKey"
                 placeholder="卡密搜索，这里的内容会当作key的前缀搜索"
-                class="filter-input"
+                style="width: 30vh"
               />
             </div>
           </n-gi>
+          <n-gi>
+            <div class="filter-item">
+              <span class="filter-label">项目筛选：</span>
+
+              <n-auto-complete
+                v-model:value="searchProjectSelectValue"
+                :input-props="{ autocomplete: 'disabled' }"
+                :options="searchProjectSelectOptions"
+                placeholder="项目选择"
+                clearable
+                style="width: 20vh"
+              />
+            </div>
+          </n-gi>
+          <n-gi>
+            <div class="filter-item">
+              <span class="filter-label">是否过滤失效卡密：</span>
+              <n-space>
+                <n-radio
+                  :checked="checkedEffective === '0'"
+                  value="0"
+                  name="effective"
+                  @change="changeEffective"
+                >
+                  所有
+                </n-radio>
+                <n-radio
+                  :checked="checkedEffective === '1'"
+                  value="1"
+                  name="effective"
+                  @change="changeEffective"
+                >
+                  未失效
+                </n-radio>
+                <n-radio
+                  :checked="checkedEffective === '2'"
+                  value="2"
+                  name="effective"
+                  @change="changeEffective"
+                >
+                  已失效
+                </n-radio>
+              </n-space>
+            </div>
+          </n-gi>
+          <n-gi>
+            <div class="filter-item">
+              <span class="filter-label">卡密是否已激活：</span>
+              <n-space>
+                <n-radio
+                  :checked="checkedActivation === '0'"
+                  value="0"
+                  name="activation"
+                  @change="ChangeCheckedActivation"
+                >
+                  所有
+                </n-radio>
+                <n-radio
+                  :checked="checkedActivation === '2'"
+                  value="2"
+                  name="activation"
+                  @change="ChangeCheckedActivation"
+                >
+                  未激活
+                </n-radio>
+                <n-radio
+                  :checked="checkedActivation === '1'"
+                  value="1"
+                  name="activation"
+                  @change="ChangeCheckedActivation"
+                >
+                  已激活
+                </n-radio>
+              </n-space>
+            </div>
+          </n-gi>
+
           <n-gi>
             <div class="filter-item">
               <span class="filter-label">筛选创建用户：</span>
@@ -61,68 +138,7 @@
               </n-space>
             </div>
           </n-gi>
-          <n-gi>
-            <div class="filter-item">
-              <span class="filter-label">卡密是否已激活：</span>
-              <n-space>
-                <n-radio
-                  :checked="checkedActivation === '0'"
-                  value="0"
-                  name="activation"
-                  @change="ChangeCheckedActivation"
-                >
-                  所有
-                </n-radio>
-                <n-radio
-                  :checked="checkedActivation === '2'"
-                  value="2"
-                  name="activation"
-                  @change="ChangeCheckedActivation"
-                >
-                  未激活
-                </n-radio>
-                <n-radio
-                  :checked="checkedActivation === '1'"
-                  value="1"
-                  name="activation"
-                  @change="ChangeCheckedActivation"
-                >
-                  已激活
-                </n-radio>
-              </n-space>
-            </div>
-          </n-gi>
-          <n-gi>
-            <div class="filter-item">
-              <span class="filter-label">是否过滤失效卡密：</span>
-              <n-space>
-                <n-radio
-                  :checked="checkedEffective === '0'"
-                  value="0"
-                  name="effective"
-                  @change="changeEffective"
-                >
-                  所有
-                </n-radio>
-                <n-radio
-                  :checked="checkedEffective === '1'"
-                  value="1"
-                  name="effective"
-                  @change="changeEffective"
-                >
-                  未失效
-                </n-radio>
-                <n-radio
-                  :checked="checkedEffective === '2'"
-                  value="2"
-                  name="effective"
-                  @change="changeEffective"
-                >
-                  已失效
-                </n-radio>
-              </n-space>
-            </div>
-          </n-gi>
+
           <n-gi>
             <div class="filter-item">
               <span class="filter-label">有效期剩余时间筛选：</span>
@@ -131,17 +147,6 @@
                 :options="timeSelect"
                 :on-update:value="ChangeTimeSelect"
                 class="filter-select"
-              />
-              <span class="filter-label" style="margin-left: 16px"
-                >项目筛选：</span
-              >
-              <n-auto-complete
-                v-model:value="searchProjectSelectValue"
-                :input-props="{ autocomplete: 'disabled' }"
-                :options="searchProjectSelectOptions"
-                placeholder="项目选择"
-                clearable
-                class="filter-autocomplete"
               />
             </div>
           </n-gi>
@@ -159,17 +164,16 @@
               >
                 当前过滤查询
               </n-button>
+              <n-button
+                type="primary"
+                ghost
+                @click="openCreateCard"
+                class="create-btn"
+                style="margin-left: 12px"
+              >
+                创建卡密
+              </n-button>
             </div>
-          </n-gi>
-          <n-gi>
-            <n-button
-              type="primary"
-              ghost
-              @click="openCreateCard"
-              class="create-btn"
-            >
-              创建卡密
-            </n-button>
           </n-gi>
         </n-grid>
       </div>
@@ -286,7 +290,7 @@
               创建
             </n-button>
           </n-form-item>
-          <n-form-item label="已创建卡密">
+          <n-form-item>
             <n-input
               v-model:value="createCardListResp"
               type="textarea"
@@ -816,7 +820,7 @@ const drawerWidth = computed(() =>
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .filter-label {
@@ -829,10 +833,18 @@ const drawerWidth = computed(() =>
 .filter-autocomplete {
   flex: 1;
   min-width: 200px;
+  width: 40vh;
+  align-items: left;
+  text-align: left;
 }
 
 .filter-select {
   width: 180px;
+}
+
+.filter-item .n-space {
+  display: flex;
+  gap: 12px;
 }
 
 .table-section {
@@ -877,6 +889,7 @@ const drawerWidth = computed(() =>
   .create-btn {
     float: none;
     width: 100%;
+    margin-top: 16px;
   }
 }
 

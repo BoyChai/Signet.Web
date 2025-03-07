@@ -208,7 +208,7 @@ const deleteKey = (id) => {
     .then((res) => {
       console.log(res);
 
-      //   notify("success", "信息", res.msg);
+      notify("success", "信息", res.msg);
       getApiKeyList();
     })
     .catch((err) => {

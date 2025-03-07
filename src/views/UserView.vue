@@ -1,13 +1,12 @@
 <template>
-  <div style="background-color: #f5f7f9; padding: 10px; padding-top: 12px">
+  <div class="user-management-container">
     <n-card
       title="用户管理"
       :header-style="{ textAlign: 'left', fontSize: '20px' }"
-      :segmented="{
-        content: true,
-      }"
+      :segmented="{ content: true }"
+      class="user-card"
     >
-      <div style="height: 670px; overflow-y: auto">
+      <div class="table-wrapper">
         <n-data-table
           :key="tableKey"
           :remote="true"
@@ -17,192 +16,130 @@
           :data="data"
           :row-key="rowKey"
           @update:checked-row-keys="handlePaginationCheck"
-          :max-height="620"
+          :max-height="tableHeight"
+          :scroll-x="scrollX"
         />
+        <p v-if="!data.length" class="no-data">暂无用户数据</p>
       </div>
-      <n-pagination
-        style="float: right"
-        row-key="ID"
-        v-model:page="page"
-        v-model:page-size="pageSize"
-        :page-count="itemCount"
-        show-size-picker
-        :page-sizes="[10, 20, 30, 40, 50]"
-        :on-update:page="updatePaginationPage"
-        :on-update:page-size="updatePaginationPageSize"
-      />
-      <div style="margin-top: 100px; margin-right: 10%; float: right">
-        <n-button type="primary" @click="createStatus = true">
+      <div class="pagination-actions">
+        <n-pagination
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :page-count="pageCount"
+          show-size-picker
+          :page-sizes="[10, 20, 30, 40, 50]"
+          @update:page="updatePaginationPage"
+          @update:page-size="updatePaginationPageSize"
+        />
+        <n-button
+          type="primary"
+          style="width: 10vh"
+          @click="createStatus = true"
+          block
+        >
           创建用户
         </n-button>
       </div>
     </n-card>
-  </div>
-  <n-drawer v-model:show="createStatus" :width="502">
-    <n-drawer-content>
-      <template #header> <h3>创建用户</h3> </template>
-      <n-input v-model:value="name" placeholder="用户名" />
-      <n-input
-        style="margin-top: 20px"
-        type="password"
-        show-password-on="mousedown"
-        v-model:value="password"
-        placeholder="密码"
-      />
-      <div style="height: 15px"></div>
-      <n-radio
-        :checked="createRole === '1'"
-        value="1"
-        name="basic-demo"
-        @change="setCreateRole"
-      >
-        管理员
-      </n-radio>
-      <n-radio
-        :checked="createRole === '2'"
-        value="2"
-        name="basic-demo"
-        @change="setCreateRole"
-      >
-        代理
-      </n-radio>
 
-      <div style="margin-top: 50px">
-        <n-button @click="createStatus = false">取消</n-button>
-        <n-button style="margin-left: 20px" @click="createUser">创建</n-button>
-      </div>
-    </n-drawer-content>
-  </n-drawer>
+    <n-drawer
+      v-model:show="createStatus"
+      :width="drawerWidth"
+      :placement="drawerPlacement"
+      class="create-drawer"
+    >
+      <n-drawer-content>
+        <template #header>
+          <h3 class="drawer-title">创建用户</h3>
+        </template>
+        <n-form :model="formData" :rules="rules" ref="formRef">
+          <n-form-item label="用户名" path="name">
+            <n-input v-model:value="formData.name" placeholder="请输入用户名" />
+          </n-form-item>
+          <n-form-item label="密码" path="password">
+            <n-input
+              type="password"
+              show-password-on="mousedown"
+              v-model:value="formData.password"
+              placeholder="请输入密码"
+            />
+          </n-form-item>
+          <n-form-item label="角色" path="role">
+            <n-radio-group v-model:value="formData.role" name="role">
+              <n-radio value="1">管理员</n-radio>
+              <n-radio value="2">代理</n-radio>
+            </n-radio-group>
+          </n-form-item>
+        </n-form>
+        <div class="drawer-actions">
+          <n-button @click="createStatus = false">取消</n-button>
+          <n-button type="primary" @click="createUser" :loading="creating"
+            >创建</n-button
+          >
+        </div>
+      </n-drawer-content>
+    </n-drawer>
+  </div>
 </template>
 
 <script setup>
-import Menu from "@/components/Menu.vue";
-import { ref, getCurrentInstance, h } from "vue";
+import { ref, computed, onMounted, getCurrentInstance, h } from "vue";
 import { NButton, useNotification, useDialog } from "naive-ui";
-import { FmdBadTwotone } from "@vicons/material";
 
 const createStatus = ref(false);
+const creating = ref(false);
+const tableKey = ref(0);
 
-// 引入axios
 const { proxy } = getCurrentInstance();
 const axios = proxy.$axios;
 
-// 列名称
-const columns = ref([
-  { title: "用户名", key: "Name" },
-  { title: "创建时间", key: "CreatedAt" },
-  { title: "角色", key: "Role" },
+const columns = [
+  { title: "用户名", key: "Name", width: 150 },
+  { title: "创建时间", key: "CreatedAt", width: 180 },
+  { title: "角色", key: "Role", width: 120 },
   {
     title: "操作",
     key: "actions",
+    width: 100,
+    fixed: "right",
     render(row) {
       return h(
         NButton,
         {
           size: "small",
+          type: "error",
+          ghost: true,
           onClick: () => deleteUserWarn(row),
         },
         { default: () => "删除" }
       );
     },
   },
-]);
-const deleteUser = (row) => {
-  axios
-    .delete("/api/user/delete", {
-      data: {
-        id: row.ID,
-      },
-    })
-    .then((res) => {
-      notify("success", "信息", "删除" + row.Name + "用户成功");
-      getUserList();
-    })
-    .catch((err) => {
-      notify("error", "错误", err.request.response);
-    });
-};
-// 表数据
+];
+
 const data = ref([]);
-const createRole = ref("2");
-const setCreateRole = (e) => {
-  createRole.value = e.target.value;
-};
-// 获取所有用户
-const getUserList = () => {
-  axios
-    .get("/api/user/getList")
-    .then((res) => {
-      res.data.forEach((item) => {
-        // 使用 toISOString() 将日期转换为 ISO 8601 格式字符串，然后截取所需部分
-        if (item.EndDate) {
-          item.EndDate = new Date(item.EndDate).toISOString().substring(0, 19); // 截取到秒的部分
-        }
-        if (item.CreatedAt) {
-          item.CreatedAt = new Date(item.CreatedAt)
-            .toISOString()
-            .substring(0, 19); // 截取到秒的部分
-        }
-        if (item.UpdatedAt) {
-          item.UpdatedAt = new Date(item.UpdatedAt)
-            .toISOString()
-            .substring(0, 19); // 截取到秒的部分
-        }
-        if (item.Role == "0") {
-          item.Role = "超级管理员";
-        }
-        if (item.Role == "1") {
-          item.Role = "管理员";
-        }
-        if (item.Role == "2") {
-          item.Role = "代理";
-        }
-      });
-      data.value = res.data;
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-getUserList();
+const page = ref(1);
+const pageSize = ref(10);
+const itemCount = ref(0);
 
-const name = ref("");
-const password = ref("");
+const rowKey = (row) => row.ID;
 
-const createUser = () => {
-  axios
-    .post("/api/user/create", {
-      name: name.value,
-      pass: password.value,
-      role: createRole.value,
-    })
-    .then((res) => {
-      notify("success", "信息", "创建用户成功");
-      createStatus.value = false;
-      name.value = "";
-      password.value = "";
-      getUserList();
-    })
-    .catch((err) => {
-      notify("error", "错误", err.request.response);
-    });
+const formData = ref({
+  name: "",
+  password: "",
+  role: "2",
+});
+
+const rules = {
+  name: { required: true, message: "请输入用户名", trigger: "blur" },
+  password: { required: true, message: "请输入密码", trigger: "blur" },
+  role: { required: true, message: "请选择角色", trigger: "change" },
 };
 
+const formRef = ref(null);
+const notification = useNotification();
 const dialog = useDialog();
 
-// 删除提示
-const deleteUserWarn = (row) => {
-  dialog.warning({
-    title: "警告",
-    content: "你确定？",
-    positiveText: "确定",
-    negativeText: "不确定",
-    onPositiveClick: () => {
-      deleteUser(row);
-    },
-  });
-};
-const notification = useNotification();
 const notify = (type, title, text) => {
   notification[type]({
     content: title,
@@ -211,26 +148,203 @@ const notify = (type, title, text) => {
     keepAliveOnHover: true,
   });
 };
+
+const getUserList = async () => {
+  try {
+    const res = await axios.get("/api/user/getList", {
+      params: { page: page.value, pageSize: pageSize.value },
+    });
+    const userList = Array.isArray(res.data) ? res.data : res.data?.list || [];
+    data.value = userList.map((item) => ({
+      ...item,
+      CreatedAt: item.CreatedAt
+        ? new Date(item.CreatedAt).toLocaleString()
+        : "暂无",
+      Role:
+        item.Role === "0"
+          ? "超级管理员"
+          : item.Role === "1"
+          ? "管理员"
+          : "代理",
+    }));
+    itemCount.value = res.data.total || userList.length;
+    tableKey.value++;
+  } catch (err) {
+    notify("error", "错误", err.message || "获取用户列表失败");
+    data.value = [];
+    itemCount.value = 0;
+  }
+};
+
+const deleteUser = async (row) => {
+  try {
+    await axios.delete("/api/user/delete", { data: { id: row.ID } });
+    notify("success", "信息", `删除用户 ${row.Name} 成功`);
+    getUserList();
+  } catch (err) {
+    notify("error", "错误", err.message);
+  }
+};
+
+const deleteUserWarn = (row) => {
+  dialog.warning({
+    title: "警告",
+    content: `确定删除用户 ${row.Name} 吗？`,
+    positiveText: "确定",
+    negativeText: "取消",
+    onPositiveClick: () => deleteUser(row),
+  });
+};
+
+const createUser = async () => {
+  try {
+    await formRef.value?.validate();
+    creating.value = true;
+    await axios.post("/api/user/create", {
+      name: formData.value.name,
+      pass: formData.value.password,
+      role: formData.value.role,
+    });
+    notify("success", "信息", "创建用户成功");
+    createStatus.value = false;
+    formData.value = { name: "", password: "", role: "2" };
+    getUserList();
+  } catch (err) {
+    notify("error", "错误", err.message);
+  } finally {
+    creating.value = false;
+  }
+};
+
+const pageCount = computed(() => Math.ceil(itemCount.value / pageSize.value));
+
+const tableHeight = computed(() => (window.innerWidth < 768 ? 400 : 620));
+const scrollX = computed(() => (window.innerWidth < 768 ? 600 : undefined));
+const drawerPlacement = computed(() =>
+  window.innerWidth < 768 ? "bottom" : "right"
+);
+const drawerWidth = computed(() => (window.innerWidth < 768 ? "100%" : 502));
+
+onMounted(() => {
+  getUserList();
+});
 </script>
 
-<style>
-#header {
-  /* background-color: aqua; */
-  height: 100%;
-  width: 100%;
+<style scoped>
+.user-management-container {
+  background-color: #f5f7f9;
+  padding: 16px;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
-#main {
-  /* background-color: antiquewhite; */
-  height: 100%;
-  width: 100%;
+
+.user-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
 }
-/* #create {
-  height: 40%;
-  width: 40%;
-  border: 1px solid black;
-  background-color: aliceblue;
-  position: absolute;
-  top: 20%;
-  left: 30%;
-} */
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.pagination-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.create-drawer {
+  background-color: #fff;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  padding: 16px 16px 0;
+}
+
+.n-form {
+  padding: 16px;
+}
+
+.n-form-item {
+  margin-bottom: 16px;
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid #eee;
+  background-color: #fff;
+}
+
+@media (max-width: 768px) {
+  .user-management-container {
+    padding: 8px;
+  }
+
+  .user-card {
+    box-shadow: none;
+    border-radius: 8px;
+  }
+
+  .table-wrapper {
+    margin-bottom: 8px;
+  }
+
+  .pagination-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .n-pagination {
+    margin-bottom: 8px;
+  }
+
+  .create-drawer {
+    max-height: 80vh;
+    border-radius: 12px 12px 0 0;
+    overflow-y: auto;
+  }
+
+  .n-form {
+    padding: 12px;
+  }
+
+  .drawer-actions {
+    padding: 12px;
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .n-data-table {
+    font-size: 12px;
+  }
+
+  .n-button {
+    width: 100%;
+  }
+
+  .drawer-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .drawer-title {
+    font-size: 16px;
+    padding: 12px 12px 0;
+  }
+}
 </style>
