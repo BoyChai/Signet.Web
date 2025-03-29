@@ -161,11 +161,7 @@ const getUserList = async () => {
         ? new Date(item.CreatedAt).toLocaleString()
         : "暂无",
       Role:
-        item.Role === "0"
-          ? "超级管理员"
-          : item.Role === "1"
-          ? "管理员"
-          : "代理",
+        item.Role == "0" ? "超级管理员" : item.Role == "1" ? "管理员" : "代理",
     }));
     itemCount.value = res.data.total || userList.length;
     tableKey.value++;
