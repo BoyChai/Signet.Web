@@ -41,7 +41,43 @@
         </n-button>
       </div>
     </n-card>
-
+    <n-drawer
+      v-model:show="PointsStatus"
+      :width="drawerWidth"
+      :placement="drawerPlacement"
+      class="create-drawer"
+    >
+      <n-drawer-content>
+        <template #header>
+          <h3 class="drawer-title">设置点数</h3>
+        </template>
+        当前点数： {{ sumPoints }} 天
+        <n-input-number
+          v-model:value="dayPoints"
+          placeholder="多少天？"
+          clearable
+          class="points-input"
+        />
+        <n-input-number
+          v-model:value="weekPoints"
+          placeholder="多少周？"
+          clearable
+          class="points-input"
+        />
+        <n-input-number
+          v-model:value="monthPoints"
+          placeholder="多少月？"
+          clearable
+          class="points-input"
+        />
+        <div class="drawer-actions">
+          <n-button @click="PointsStatus = false">取消</n-button>
+          <n-button type="primary" @click="addPoints()" :loading="creating"
+            >设置点数</n-button
+          >
+        </div>
+      </n-drawer-content>
+    </n-drawer>
     <n-drawer
       v-model:show="createStatus"
       :width="drawerWidth"
@@ -84,9 +120,11 @@
 
 <script setup>
 import { ref, computed, onMounted, getCurrentInstance, h } from "vue";
-import { NButton, useNotification, useDialog } from "naive-ui";
+import { NButton, useNotification, useDialog, NSpace } from "naive-ui";
+import { IosGitMerge } from "@vicons/ionicons4";
 
 const createStatus = ref(false);
+const PointsStatus = ref(false);
 const creating = ref(false);
 const tableKey = ref(0);
 
@@ -97,22 +135,38 @@ const columns = [
   { title: "用户名", key: "Name", width: 150 },
   { title: "创建时间", key: "CreatedAt", width: 180 },
   { title: "角色", key: "Role", width: 120 },
+  { title: "点数", key: "Points", width: 120 },
   {
     title: "操作",
     key: "actions",
-    width: 100,
+    width: 200, // 增加宽度以容纳两个按钮
     fixed: "right",
     render(row) {
-      return h(
-        NButton,
-        {
-          size: "small",
-          type: "error",
-          ghost: true,
-          onClick: () => deleteUserWarn(row),
-        },
-        { default: () => "删除" }
-      );
+      return h(NSpace, null, {
+        default: () => [
+          h(
+            NButton,
+            {
+              size: "small",
+              type: "primary",
+              ghost: true,
+              onClick: () => setPoints(row),
+              style: { marginRight: "10px" },
+            },
+            { default: () => "点数设置" }
+          ),
+          h(
+            NButton,
+            {
+              size: "small",
+              type: "error",
+              ghost: true,
+              onClick: () => deleteUserWarn(row),
+            },
+            { default: () => "删除" }
+          ),
+        ],
+      });
     },
   },
 ];
@@ -140,6 +194,13 @@ const formRef = ref(null);
 const notification = useNotification();
 const dialog = useDialog();
 
+// 创建点数变量
+const sumPoints = ref(0);
+const dayPoints = ref(0);
+const weekPoints = ref(0);
+const monthPoints = ref(0);
+const pointsID = ref(0);
+
 const notify = (type, title, text) => {
   notification[type]({
     content: title,
@@ -162,6 +223,7 @@ const getUserList = async () => {
         : "暂无",
       Role:
         item.Role == "0" ? "超级管理员" : item.Role == "1" ? "管理员" : "代理",
+      Points: item.Role <= 1 ? "无点数限制" : item.Points,
     }));
     itemCount.value = res.data.total || userList.length;
     tableKey.value++;
@@ -190,6 +252,45 @@ const deleteUserWarn = (row) => {
     negativeText: "取消",
     onPositiveClick: () => deleteUser(row),
   });
+};
+
+const setPoints = (row) => {
+  sumPoints.value = row.Points / 60;
+  sumPoints.value = sumPoints.value;
+  pointsID.value = row.ID;
+  if (row.Role === "超级管理员" || row.Role === "管理员") {
+    notify("success", "信息", "该用户无点数限制");
+    return;
+  }
+  PointsStatus.value = true;
+};
+const addPoints = async () => {
+  try {
+    // 计算总点数
+    const points =
+      dayPoints.value * 60 +
+      weekPoints.value * 60 * 7 +
+      monthPoints.value * 60 * 30;
+
+    // 调用后端接口
+    const response = await axios.post("/api/user/add/points", {
+      userid: pointsID.value, // 使用传入的行数据中的用户ID
+      points: points,
+    });
+
+    notify("success", "成功", `已把对应用户点数设置为 ${points} 点`);
+
+    // 刷新用户列表
+    getUserList();
+
+    // 重置点数输入
+    dayPoints.value = 0;
+    weekPoints.value = 0;
+    monthPoints.value = 0;
+  } catch (err) {
+    notify("error", "错误", err.response?.data?.message || err.message);
+  }
+  PointsStatus.value = false;
 };
 
 const createUser = async () => {
@@ -342,5 +443,8 @@ onMounted(() => {
     font-size: 16px;
     padding: 12px 12px 0;
   }
+}
+.points-input {
+  margin-top: 10px;
 }
 </style>
