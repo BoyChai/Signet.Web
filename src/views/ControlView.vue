@@ -52,12 +52,12 @@
         direction="horizontal"
         style="height: 100%"
         :max="0.13"
-        :min="0.13"
         :disabled="true"
-        :default-size="0.13"
+        :default-size="isMobile ? 0 : 0.13"
       >
         <template #1>
           <div
+            v-if="!isMobile"
             style="
               box-sizing: border-box;
               border-right: 1px solid rgb(239, 239, 245);
@@ -104,11 +104,17 @@
   </n-drawer>
 </template>
 <script setup>
-import { ref, getCurrentInstance } from "vue";
+import { useWindowSize } from "@vueuse/core";
+
+import { watch, ref, getCurrentInstance, computed } from "vue";
 import Menu from "@/components/ControlMenu.vue";
 import Breadcrumb from "@/components/ControlBreadcrumb.vue";
 import { useNotification } from "naive-ui";
 import { useRouter } from "vue-router";
+const { width } = useWindowSize();
+
+const isMobile = computed(() => width.value < 768);
+
 const router = useRouter();
 
 const notification = useNotification();

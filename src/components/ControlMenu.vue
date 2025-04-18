@@ -112,23 +112,6 @@ const menuOptions = computed(() =>
       key: "info",
       icon: renderIcon(MdInformationCircleOutline),
     },
-
-    // {
-    //   label: "数据统计",
-    //   key: "develop",
-    //   icon: renderIcon(IosCheckboxOutline),
-    //   children: [
-    //     {
-    //       label: () =>
-    //         h(
-    //           RouterLink,
-    //           { to: { name: "develop" } },
-    //           { default: () => "校验统计" }
-    //         ),
-    //       key: "develop-statistics",
-    //     },
-    //   ],
-    // },
   ].filter(
     (option) =>
       userRole.value <= 1 || // 小于或等于1展示所有
