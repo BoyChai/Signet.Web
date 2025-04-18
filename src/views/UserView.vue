@@ -255,7 +255,7 @@ const deleteUserWarn = (row) => {
 };
 
 const setPoints = (row) => {
-  sumPoints.value = row.Points / 60;
+  sumPoints.value = row.Points / 60 / 60 / 24;
   sumPoints.value = sumPoints.value;
   pointsID.value = row.ID;
   if (row.Role === "超级管理员" || row.Role === "管理员") {
@@ -268,9 +268,9 @@ const addPoints = async () => {
   try {
     // 计算总点数
     const points =
-      dayPoints.value * 60 +
-      weekPoints.value * 60 * 7 +
-      monthPoints.value * 60 * 30;
+      dayPoints.value * 24 * 60 * 60 +
+      weekPoints.value * 24 * 60 * 60 * 7 +
+      monthPoints.value * 24 * 60 * 60 * 30;
 
     // 调用后端接口
     const response = await axios.post("/api/user/add/points", {
