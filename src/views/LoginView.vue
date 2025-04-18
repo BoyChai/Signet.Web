@@ -108,7 +108,8 @@ const login = async () => {
     router.push("/");
   } catch (err) {
     if (err instanceof Error) {
-      // 表单验证失败
+      notify("error", "错误", "登陆失败，请检查账号或密码");
+
       return;
     }
     const errorMsg =
@@ -166,6 +167,16 @@ const login = async () => {
 .input-field {
   height: 48px;
   border-radius: 8px;
+  /* 字体剧中并且放大 */
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 16px;
+  border: 1px solid #dcdcdc;
+  transition: all 0.3s ease;
+}
+
+.input-field:hover {
   font-size: 16px;
   transition: all 0.3s ease;
 }

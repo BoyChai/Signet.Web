@@ -237,6 +237,8 @@ onMounted(async () => {
   padding: 16px;
   min-height: 100vh;
   box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* 平滑滚动 iOS */
 }
 
 .main-card {
@@ -299,6 +301,8 @@ onMounted(async () => {
 @media (max-width: 600px) {
   .dashboard-container {
     padding: 8px;
+    height: calc(100vh - var(--mobile-header-height, 60px));
+    overflow-y: auto;
   }
 
   .main-card {
