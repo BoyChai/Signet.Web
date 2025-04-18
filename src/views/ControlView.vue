@@ -15,34 +15,124 @@
           height: 100%;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 10px 15px;
+          padding: 8px 12px;
         "
       >
-        <div style="display: flex; align-items: center">
-          <img
-            src="../../public/Deft.png"
-            style="height: 40px; width: 40px; margin-right: 10px"
-          />
-          <h2 style="font-size: 30px; margin: 0">Signet 卡密校验</h2>
-          <Breadcrumb style="margin-left: 10px"></Breadcrumb>
+        <!-- Mobile menu button (now on left) -->
+        <div v-if="isMobile" style="flex-shrink: 0; margin-right: 10px">
+          <n-button @click="showMobileMenu = true" quaternary size="tiny">
+            <template #icon>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 12H21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M3 6H21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M3 18H21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </template>
+          </n-button>
         </div>
-        <div style="left: right; margin-right: 10px; font-size: 15px">
-          <span style="margin-right: 20px; font-size: 20px; font-weight: 600">{{
-            user
-          }}</span>
-          <span style="margin-right: 20px">{{ role }}</span>
-          <n-button
-            @click="updatePassStatus = true"
-            style="margin-right: 20px"
-            quaternary
+        <!-- Logo and title -->
+        <div style="flex-grow: 1; display: flex; align-items: center">
+          <div v-if="!isMobile" style="display: flex; align-items: center">
+            <img
+              src="../../public/Deft.png"
+              style="height: 40px; width: 40px; margin-right: 10px"
+            />
+            <h2 style="font-size: 30px; margin: 0">Signet 卡密校验</h2>
+          </div>
+
+          <div
+            v-if="isMobile"
+            style="display: flex; align-items: center; margin-left: 10px"
           >
+            <img
+              src="../../public/Deft.png"
+              style="height: 30px; width: 30px; margin-right: 8px"
+            />
+            <h2 style="font-size: 18px; margin: 0; white-space: nowrap">
+              Signet 卡密校验
+            </h2>
+          </div>
+        </div>
+
+        <!-- Menu items -->
+        <div
+          v-if="!isMobile"
+          style="display: flex; align-items: center; gap: 20px"
+        >
+          <span style="font-size: 20px; font-weight: 600">{{ user }}</span>
+          <span>{{ role }}</span>
+          <n-button @click="updatePassStatus = true" quaternary>
             修改密码
           </n-button>
-          <n-button @click="logOut" style="margin-right: 20px" quaternary>
-            退出登录
-          </n-button>
-          <span> Signet-{{ version }}</span>
+          <n-button @click="logOut" quaternary> 退出登录 </n-button>
+          <span style="font-size: 12px">Signet-{{ version }}</span>
+        </div>
+
+        <!-- Mobile dropdown menu -->
+        <div v-if="isMobile" style="flex-shrink: 0">
+          <n-dropdown
+            trigger="click"
+            :options="mobileOptions"
+            @select="handleMobileSelect"
+          >
+            <n-button quaternary size="tiny">
+              <template #icon>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M12 20C12.5523 20 13 19.5523 13 19C13 18.4477 12.5523 18 12 18C11.4477 18 11 18.4477 11 19C11 19.5523 11.4477 20 12 20Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </template>
+            </n-button>
+          </n-dropdown>
         </div>
       </div>
     </template>
@@ -76,6 +166,12 @@
     </template>
   </n-split>
 
+  <!-- 移动端菜单 -->
+  <ControlMobileMenu
+    v-model:show="showMobileMenu"
+    @close="showMobileMenu = false"
+  />
+
   <!-- 修改密码 -->
   <n-drawer v-model:show="updatePassStatus" :width="502">
     <n-drawer-content>
@@ -103,20 +199,41 @@
     </n-drawer-content>
   </n-drawer>
 </template>
+
 <script setup>
 import { useWindowSize } from "@vueuse/core";
-
-import { watch, ref, getCurrentInstance, computed } from "vue";
-import Menu from "@/components/ControlMenu.vue";
-import Breadcrumb from "@/components/ControlBreadcrumb.vue";
+import { ref, getCurrentInstance, computed } from "vue";
+import { NDropdown } from "naive-ui";
+import Menu from "../components/ControlMenu.vue";
+import ControlMobileMenu from "../components/ControlMobileMenu.vue";
 import { useNotification } from "naive-ui";
 import { useRouter } from "vue-router";
-const { width } = useWindowSize();
+import { Menu as MenuIcon } from "@vicons/ionicons5";
 
+const { width } = useWindowSize();
 const isMobile = computed(() => width.value < 768);
+const showMobileMenu = ref(false);
+
+const mobileOptions = [
+  {
+    label: "修改密码",
+    key: "updatePass",
+  },
+  {
+    label: "退出登录",
+    key: "logout",
+  },
+];
+
+const handleMobileSelect = (key) => {
+  if (key === "updatePass") {
+    updatePassStatus.value = true;
+  } else if (key === "logout") {
+    logOut();
+  }
+};
 
 const router = useRouter();
-
 const notification = useNotification();
 const notify = (type, title, text) => {
   notification[type]({
@@ -209,10 +326,21 @@ const getUserInfo = () => {
 };
 getUserInfo();
 </script>
+
 <style>
 html,
 body,
 #app {
   height: 100%;
+}
+
+@media (max-width: 768px) {
+  .n-split-pane-1 {
+    padding: 0 !important;
+  }
+
+  .n-split-pane-2 {
+    padding: 0 !important;
+  }
 }
 </style>
