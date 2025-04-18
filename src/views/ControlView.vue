@@ -23,9 +23,9 @@
           <n-button @click="showMobileMenu = true" quaternary size="tiny">
             <template #icon>
               <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -66,7 +66,12 @@
 
           <div
             v-if="isMobile"
-            style="display: flex; align-items: center; margin-left: 10px"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 100%;
+            "
           >
             <img
               src="../../public/Deft.png"
@@ -102,9 +107,9 @@
             <n-button quaternary size="tiny">
               <template #icon>
                 <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
