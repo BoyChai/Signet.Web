@@ -178,28 +178,53 @@
   />
 
   <!-- 修改密码 -->
-  <n-drawer v-model:show="updatePassStatus" :width="502">
+  <n-drawer
+    v-model:show="updatePassStatus"
+    :width="isMobile ? '100%' : 502"
+    placement="bottom"
+  >
     <n-drawer-content>
       <template #header> <h3>修改当前用户密码</h3> </template>
-      <n-input
-        style="margin-top: 20px"
-        type="password"
-        show-password-on="mousedown"
-        v-model:value="oldPassword"
-        placeholder="旧密码"
-      />
-      <n-input
-        style="margin-top: 20px"
-        type="password"
-        show-password-on="mousedown"
-        v-model:value="newPassword"
-        placeholder="新密码"
-      />
-      <div style="margin-top: 50px">
-        <n-button @click="updatePassStatus = false">取消</n-button>
-        <n-button style="margin-left: 20px" @click="updatePass"
-          >修改密码</n-button
+      <div :style="isMobile ? 'padding: 16px' : ''">
+        <n-input
+          style="margin-top: 16px"
+          type="password"
+          show-password-on="mousedown"
+          v-model:value="oldPassword"
+          placeholder="旧密码"
+          :size="isMobile ? 'large' : 'medium'"
+        />
+        <n-input
+          style="margin-top: 16px"
+          type="password"
+          show-password-on="mousedown"
+          v-model:value="newPassword"
+          placeholder="新密码"
+          :size="isMobile ? 'large' : 'medium'"
+        />
+        <div
+          style="
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+          "
         >
+          <n-button
+            @click="updatePassStatus = false"
+            :size="isMobile ? 'large' : 'medium'"
+            style="flex: 1; margin-right: 8px"
+          >
+            取消
+          </n-button>
+          <n-button
+            @click="updatePass"
+            type="primary"
+            :size="isMobile ? 'large' : 'medium'"
+            style="flex: 1; margin-left: 8px"
+          >
+            修改密码
+          </n-button>
+        </div>
       </div>
     </n-drawer-content>
   </n-drawer>
