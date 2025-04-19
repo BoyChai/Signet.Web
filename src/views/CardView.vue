@@ -661,7 +661,7 @@ const createCard = async () => {
           time: targetTimestamp,
           immediately: immediately.value,
           project_id: projectID,
-          card_type: cardType.value,
+          card_type: parseInt(cardType.value, 10), // 每次重新计算
         })
       );
       const responses = await Promise.all(requests);
@@ -678,7 +678,7 @@ const createCard = async () => {
         time: targetTimestamp,
         immediately: immediately.value,
         project_id: projectID,
-        card_type: cardType.value,
+        card_type: parseInt(cardType.value, 10), // 每次重新计算
       });
       createCardListResp.value = res.data;
       notify("success", "信息", `${res.data} ${res.msg}`);
@@ -858,39 +858,112 @@ const drawerWidth = computed(() =>
     text-align: left;
   }
 
+  /* 表格样式优化 */
+  .data-table {
+    min-width: 100%;
+    table-layout: fixed;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 4px;
+    font-size: 12px;
+    white-space: normal;
+    word-break: break-word;
+    vertical-align: top;
+  }
+
+  /* 固定列宽 */
+  .data-table th:nth-child(1),
+  .data-table td:nth-child(1) {
+    width: 40px;
+  }
+
+  .data-table th:nth-child(2),
+  .data-table td:nth-child(2) {
+    width: 100px;
+  }
+
+  .data-table th:nth-child(3),
+  .data-table td:nth-child(3) {
+    width: 150px;
+  }
+
+  .data-table th:nth-child(4),
+  .data-table td:nth-child(4),
+  .data-table th:nth-child(5),
+  .data-table td:nth-child(5) {
+    width: 120px;
+  }
+
+  .data-table th:nth-child(6),
+  .data-table td:nth-child(6) {
+    width: 80px;
+  }
+
+  .data-table th:nth-child(7),
+  .data-table td:nth-child(7) {
+    width: 60px;
+  }
+
+  /* 表格容器 */
+  .table-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 表单元素 */
   .filter-input,
   .filter-autocomplete,
   .filter-select {
     width: 100% !important;
+    margin-bottom: 8px;
   }
 
-  .filter-item .n-space {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    width: 100%;
-  }
-
+  /* 单选按钮组 */
+  .filter-item .n-space,
   .filter-item .n-radio-group {
     flex-direction: column;
-    gap: 12px;
+    align-items: flex-start;
+    gap: 8px;
     width: 100%;
   }
 
-  .filter-item .n-radio {
-    margin-right: 0;
-  }
-
+  /* 按钮样式 */
   .filter-item .n-button {
     width: 100%;
-    margin-left: 0 !important;
-    margin-top: 8px;
+    margin: 8px 0 !important;
     height: 42px;
     font-size: 15px;
   }
 
-  .filter-item .n-button + .n-button {
-    margin-left: 0 !important;
+  /* 创建卡密抽屉样式 */
+  .n-drawer .n-drawer-content {
+    padding: 16px;
+  }
+
+  .n-form-item {
+    margin-bottom: 16px;
+  }
+
+  .n-form-item .n-input,
+  .n-form-item .n-auto-complete,
+  .n-form-item .n-select,
+  .n-form-item .n-textarea {
+    width: 100% !important;
+  }
+
+  .n-form-item .n-radio-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .n-form-item .n-button {
+    width: 100%;
+    margin: 8px 0 !important;
   }
 }
 
@@ -925,14 +998,29 @@ const drawerWidth = computed(() =>
 }
 
 @media (max-width: 600px) {
-  .data-table {
-    min-width: 100%;
-    width: 100%;
+  .table-section {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0;
+  }
+  .data-table {
+    min-width: 800px;
+    width: 100%;
     display: block;
   }
   .data-table table {
-    min-width: 100%;
+    min-width: 800px;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 12px 8px;
+    white-space: nowrap;
+  }
+  .data-table th {
+    font-size: 13px;
+  }
+  .data-table td {
+    font-size: 12px;
   }
 }
 
@@ -1053,6 +1141,9 @@ const drawerWidth = computed(() =>
 @media (max-width: 600px) {
   .main-card {
     box-shadow: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .data-table {
@@ -1103,15 +1194,19 @@ const drawerWidth = computed(() =>
   }
 
   .n-form-item {
-    margin-bottom: 32px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .n-form-item-label {
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 15px;
+    margin-bottom: 4px;
     display: block;
     font-weight: 600;
     color: #333;
+    width: 100%;
   }
 
   .n-input,
@@ -1122,11 +1217,18 @@ const drawerWidth = computed(() =>
     width: 100% !important;
   }
 
+  .n-textarea {
+    min-height: 300px;
+    width: 100% !important;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
   .n-radio-group {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 0;
   }
 
   .n-radio {
@@ -1135,7 +1237,27 @@ const drawerWidth = computed(() =>
   }
 
   .n-radio__label {
-    font-size: 15px;
+    font-size: 14px;
+  }
+
+  .n-form-item .n-space {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .n-button {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .n-button + .n-button {
+    margin-left: 0 !important;
+    margin-top: 8px;
+  }
+
+  .n-form-item {
+    margin-bottom: 12px;
   }
 
   .n-button {
