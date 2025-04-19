@@ -234,9 +234,13 @@
             />
           </n-form-item>
           <n-form-item label="卡密类型">
-            <n-radio-group v-model:value="cardType" name="cardType">
-              <n-radio value="0" @change="setCardType">时卡</n-radio>
-              <n-radio value="1" @change="setCardType">次卡</n-radio>
+            <n-radio-group
+              v-model:value="cardType"
+              name="cardType"
+              @update:value="setCardType"
+            >
+              <n-radio value="0">时卡</n-radio>
+              <n-radio value="1">次卡</n-radio>
             </n-radio-group>
           </n-form-item>
           <n-form-item v-if="cardType == 0" label="时长选择">
@@ -465,6 +469,7 @@ const openCreateCard = () => {
   date.value = "一天";
   quantity.value = 1;
   immediately.value = false;
+  cardType.value = "0"; // 确保重置为默认值"0"
   createStatus.value = true;
 };
 
@@ -579,16 +584,15 @@ const key = ref("");
 const prefix = ref("");
 const date = ref("一天");
 const immediately = ref(false);
-const cardType = ref(0);
+const cardType = ref("0");
 
 const setCardOften = (e) => {
   date.value = e.target.value;
 };
 
-const setCardType = (e) => {
-  cardType.value = parseInt(e.target.value);
+const setCardType = (value) => {
+  cardType.value = value;
 };
-
 const setImmediately = (e) => {
   immediately.value = e.target.value === "true";
 };
@@ -801,6 +805,8 @@ const drawerWidth = computed(() =>
   padding: 16px;
   min-height: 100vh;
   box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .main-card {
@@ -829,6 +835,65 @@ const drawerWidth = computed(() =>
   white-space: nowrap;
 }
 
+@media (max-width: 600px) {
+  .filter-section {
+    padding: 12px;
+    text-align: left;
+  }
+
+  .filter-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+  }
+
+  .filter-label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    width: 100%;
+    text-align: left;
+  }
+
+  .filter-input,
+  .filter-autocomplete,
+  .filter-select {
+    width: 100% !important;
+  }
+
+  .filter-item .n-space {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .filter-item .n-radio-group {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .filter-item .n-radio {
+    margin-right: 0;
+  }
+
+  .filter-item .n-button {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 8px;
+    height: 42px;
+    font-size: 15px;
+  }
+
+  .filter-item .n-button + .n-button {
+    margin-left: 0 !important;
+  }
+}
+
 .filter-input,
 .filter-autocomplete {
   flex: 1;
@@ -849,12 +914,26 @@ const drawerWidth = computed(() =>
 
 .table-section {
   padding: 0 16px 16px;
+  overflow-x: auto;
 }
 
 .data-table {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-width: 600px;
+}
+
+@media (max-width: 600px) {
+  .data-table {
+    min-width: 100%;
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+  .data-table table {
+    min-width: 100%;
+  }
 }
 
 .pagination {
@@ -862,8 +941,65 @@ const drawerWidth = computed(() =>
   float: right;
 }
 
+@media (max-width: 600px) {
+  .pagination {
+    float: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 24px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .pagination .n-pagination-item {
+    min-width: 36px;
+    height: 36px;
+    margin: 0 2px;
+    font-size: 14px;
+  }
+
+  .pagination .n-pagination-item--active {
+    background-color: #f0f0f0;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .pagination .n-pagination-quick-jumper {
+    margin-left: 0;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pagination .n-pagination-picker {
+    margin: 0;
+    width: 100%;
+    max-width: 200px;
+  }
+
+  .pagination .n-pagination-picker .n-select {
+    width: 100%;
+  }
+
+  .pagination .n-input {
+    width: 60px;
+    margin: 0 4px;
+  }
+}
+
 .create-btn {
   float: right;
+}
+
+@media (min-width: 901px) {
+  .filter-item .n-button {
+    margin-left: 12px !important;
+  }
 }
 
 @media (max-width: 900px) {
@@ -878,6 +1014,14 @@ const drawerWidth = computed(() =>
   .filter-item {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .filter-label {
+    font-size: 15px;
+    margin-bottom: 6px;
+    font-weight: 600;
   }
 
   .filter-input,
@@ -890,6 +1034,19 @@ const drawerWidth = computed(() =>
     float: none;
     width: 100%;
     margin-top: 16px;
+    margin-left: 0 !important;
+  }
+
+  .n-radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .n-button {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 8px;
   }
 }
 
@@ -899,11 +1056,126 @@ const drawerWidth = computed(() =>
   }
 
   .data-table {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .data-table td {
-    padding: 6px;
+    padding: 14px 8px;
+    line-height: 1.4;
+  }
+
+  .data-table th {
+    padding: 16px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: #f8f8f8;
+    position: sticky;
+    top: 0;
+  }
+
+  .data-table .n-checkbox {
+    margin-right: 6px;
+  }
+
+  .data-table tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+
+  .data-table tr:hover {
+    background-color: #f5f5f5;
+  }
+
+  .data-table .n-button {
+    font-size: 13px;
+    padding: 0 10px;
+    height: 28px;
+  }
+
+  .n-drawer .n-drawer-content {
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .n-drawer .n-drawer-header {
+    padding: 16px;
+    font-size: 18px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .n-form-item {
+    margin-bottom: 32px;
+  }
+
+  .n-form-item-label {
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: block;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .n-input,
+  .n-auto-complete,
+  .n-select,
+  .n-time-picker,
+  .n-textarea {
+    width: 100% !important;
+  }
+
+  .n-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 10px;
+  }
+
+  .n-radio {
+    margin-right: 0;
+    align-items: flex-start;
+  }
+
+  .n-radio__label {
+    font-size: 15px;
+  }
+
+  .n-button {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 16px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .n-form-item .n-space {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .n-time-picker,
+  .n-input[style*="margin-top"] {
+    margin-top: 14px !important;
+  }
+
+  .n-drawer .n-drawer-footer {
+    padding: 16px;
+    background-color: #f9f9f9;
+  }
+
+  .n-drawer .n-drawer-footer .n-button {
+    margin-top: 16px;
+  }
+
+  .n-form-item .n-button {
+    margin-top: 24px;
+  }
+
+  .n-form-item .n-button + .n-button {
+    margin-left: 0 !important;
+  }
+
+  .n-textarea {
+    min-height: 200px;
+    font-size: 14px;
   }
 }
 </style>
