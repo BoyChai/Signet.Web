@@ -19,7 +19,7 @@
         <n-button type="primary" @click="showCard">新增密钥</n-button>
       </div>
 
-      <div style="height: 90%; overflow-y: auto; margin-top: 20px">
+      <div class="table-container">
         <n-data-table
           :columns="columns"
           :data="data"
@@ -41,17 +41,22 @@
     </n-card>
 
     <!-- 创建抽屉 -->
-    <n-drawer v-model:show="createStatu" :width="502" placement="right">
+    <n-drawer
+      v-model:show="createStatu"
+      :width="mobile ? '100%' : 502"
+      placement="right"
+    >
       <n-drawer-content title="创建密钥">
         <n-input v-model:value="notes" placeholder="请输入备注信息" />
-        <div style="margin-top: 20px"></div>
-        <n-button type="primary" @click="createApiKey">创建</n-button>
+        <div style="margin-top: 20px; text-align: center">
+          <n-button type="primary" @click="createApiKey">创建</n-button>
+        </div>
       </n-drawer-content>
     </n-drawer>
   </div>
 </template>
 <script setup>
-import { ref, getCurrentInstance, h } from "vue";
+import { ref, getCurrentInstance, h, computed } from "vue";
 import { useNotification, NButton, useDialog } from "naive-ui";
 
 // notify函数
@@ -110,6 +115,7 @@ const columns = ref([
 ]);
 // 数据
 const data = ref([]);
+const mobile = computed(() => window.innerWidth < 768);
 
 // 分页相关变量
 const page = ref(1);
@@ -272,5 +278,82 @@ const deleteKeyWarn = (row) => {
 
 .sliderText {
   margin-left: 5px;
+}
+
+/* 表格容器优化 */
+.table-container {
+  height: calc(100% - 100px);
+  margin-top: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS滚动优化 */
+  overscroll-behavior: contain; /* 防止滚动传播 */
+  touch-action: pan-y; /* 优化触摸滚动 */
+}
+
+/* 分页固定定位 */
+.n-pagination {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 10px 0;
+  z-index: 100;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .n-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .n-drawer-content {
+    padding: 16px !important;
+  }
+  .n-input {
+    width: 100% !important;
+  }
+  .table-container {
+    height: calc(100vh - 250px); /* 调整高度留出分页空间 */
+    margin-bottom: 60px; /* 为分页留出空间 */
+  }
+
+  .n-data-table {
+    min-width: 100%;
+    width: auto !important;
+  }
+
+  .n-card {
+    padding: 8px;
+  }
+
+  /* 移动端分页优化 */
+  .n-pagination {
+    margin-top: 10px;
+    float: none !important;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* 表格列响应式 */
+  .n-data-table .n-data-table-th {
+    padding: 8px 4px !important;
+  }
+
+  .n-data-table .n-data-table-td {
+    padding: 8px 4px !important;
+  }
+}
+
+/* 加载状态 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 </style>

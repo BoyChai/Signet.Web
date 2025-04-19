@@ -138,27 +138,28 @@ const copyPublicKey = () => {
 // 响应式网格列数
 const gridCols = {
   xs: 1, // 小于 640px，1列
-  s: 1, // 小于 1024px，1列
-  m: 2, // 小于 1440px，2列
+  s: 2, // 小于 1024px，2列
+  m: 3, // 小于 1440px，3列
   l: 3, // 大于等于 1440px，3列
 };
 </script>
 
 <style scoped>
 .page-wrapper {
-  padding: 20px;
+  padding: 24px;
   min-height: 100vh;
   background: #f5f7f9;
-  overflow-y: auto; /* 确保页面可滚动 */
+  overflow-y: auto;
 }
 
 .info-card {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   background: white;
   transition: transform 0.3s ease;
+  padding: 24px;
 }
 
 .info-card:hover {
@@ -167,11 +168,13 @@ const gridCols = {
 
 .info-section {
   background: white;
-  padding: 16px;
+  padding: 20px;
   border-radius: 8px;
   border: 1px solid #e8ecef;
   transition: box-shadow 0.3s ease;
-  min-height: 250px; /* 确保卡片高度一致，减少垂直空白 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .info-section:hover {
@@ -179,35 +182,40 @@ const gridCols = {
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #2c3e50;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .label {
-  font-size: 14px;
+  font-size: 16px;
   color: #555;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .value {
-  font-size: 14px;
+  font-size: 16px;
   color: #333;
   text-align: right;
   overflow-wrap: break-word;
-  max-width: 60%; /* 限制值宽度，避免溢出 */
+  max-width: 70%;
 }
 
 .public-key-container {
   position: relative;
-  height: 200px;
+  flex: 1;
+  min-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   border: 1px solid #e8ecef;
   border-radius: 6px;
-  padding: 12px;
+  padding: 16px;
   background: #fafafa;
+  margin-top: 12px;
 }
 
 .public-key-text {
@@ -233,11 +241,12 @@ const gridCols = {
   .info-card {
     max-width: 100%;
     border-radius: 8px;
+    padding: 16px;
   }
 
   .info-section {
     padding: 12px;
-    min-height: auto; /* 手机端移除最小高度 */
+    min-height: auto;
   }
 
   .section-title {
@@ -255,7 +264,8 @@ const gridCols = {
   }
 
   .public-key-container {
-    height: 150px;
+    min-height: 150px;
+    max-height: 200px;
     padding: 10px;
   }
 
@@ -266,6 +276,29 @@ const gridCols = {
   .copy-btn {
     top: 6px;
     right: 6px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .page-wrapper {
+    padding: 32px;
+  }
+
+  .info-card {
+    padding: 32px;
+  }
+
+  .info-section {
+    padding: 24px;
+  }
+
+  .section-title {
+    font-size: 22px;
+  }
+
+  .label,
+  .value {
+    font-size: 17px;
   }
 }
 </style>

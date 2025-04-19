@@ -346,6 +346,7 @@ const stats = computed(() => [
 /* 样式保持不变 */
 .container {
   padding: 10px;
+  padding-bottom: 80px;
   background-color: #f9f9f9;
   min-height: 100vh;
 }
@@ -357,7 +358,7 @@ const stats = computed(() => [
 
 .grid-container {
   padding: 12px 0;
-  max-height: 80vh;
+  max-height: calc(100vh - 280px);
   overflow-y: auto;
 }
 
@@ -422,6 +423,10 @@ const stats = computed(() => [
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding-bottom: 80px;
+  }
+
   .item-card {
     height: auto;
     min-height: 200px;
@@ -434,6 +439,22 @@ const stats = computed(() => [
   .create-btn {
     width: 100%;
     margin-top: 8px;
+  }
+
+  .grid-container {
+    max-height: calc(100vh - 240px);
+  }
+
+  .pagination {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    left: 20px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
   }
 }
 </style>

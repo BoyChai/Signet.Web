@@ -10,51 +10,46 @@
     >
       <n-grid x-gap="12" :cols="1">
         <n-gi>
-          <div style="display: flex; align-items: center">
-            <span style="font-size: 15px; font-weight: 500">卡密查询：</span>
-            <n-input
-              style="width: 18%; text-align: left"
-              placeholder="卡密搜索，这里的内容会当作key的前缀搜索"
-              v-model:value="searchKey"
-            ></n-input>
-            <span
-              style="
-                text-align: left;
-                font-size: 15px;
-                font-weight: 500;
-                margin-left: 15px;
-              "
-              >项目筛选：</span
-            >
-            <n-auto-complete
-              style="width: 10%; margin-left: 8px"
-              v-model:value="searchProjectSelectValue"
-              :input-props="{
-                autocomplete: 'disabled',
-              }"
-              :options="searchProjectSelectOptions"
-              placeholder="项目选择"
-              clearable
-            />
-            <span style="font-size: 15px; font-weight: 500; margin-left: 15px"
-              >设备码查询：</span
-            >
-            <n-input
-              style="width: 18%; text-align: left"
-              placeholder="卡密搜索，这里的内容会当作key的前缀搜索"
-              v-model:value="deviceCode"
-            ></n-input>
+          <div class="search-container">
+            <div class="search-item">
+              <span class="search-label">卡密查询：</span>
+              <n-input
+                class="search-input"
+                placeholder="卡密搜索，这里的内容会当作key的前缀搜索"
+                v-model:value="searchKey"
+              ></n-input>
+            </div>
 
-            <n-button
-              style="margin-left: 32%"
-              type="primary"
-              @click="getRecordList"
+            <div class="search-item">
+              <span class="search-label">项目筛选：</span>
+              <n-auto-complete
+                class="search-input"
+                v-model:value="searchProjectSelectValue"
+                :input-props="{
+                  autocomplete: 'disabled',
+                }"
+                :options="searchProjectSelectOptions"
+                placeholder="项目选择"
+                clearable
+              />
+            </div>
+
+            <div class="search-item">
+              <span class="search-label">设备码查询：</span>
+              <n-input
+                class="search-input"
+                placeholder="卡密搜索，这里的内容会当作key的前缀搜索"
+                v-model:value="deviceCode"
+              ></n-input>
+            </div>
+
+            <n-button class="search-btn" type="primary" @click="getRecordList"
               >Search Logs</n-button
             >
           </div>
         </n-gi>
       </n-grid>
-      <div style="height: 93%; overflow-y: auto; margin-top: 20px">
+      <div class="table-container">
         <n-data-table
           :columns="columns"
           :data="data"
@@ -63,7 +58,7 @@
         />
       </div>
       <n-pagination
-        style="float: right"
+        class="pagination-wrapper"
         row-key="ID"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -273,4 +268,108 @@ const updatePaginationPageSize = (newPageSize) => {
 };
 </script>
 
-<style></style>
+<style scoped>
+/* 通用样式 */
+.n-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-label {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.search-input {
+  min-width: 180px;
+}
+
+/* PC端样式 */
+@media (min-width: 768px) {
+  .search-btn {
+    margin-left: auto;
+  }
+}
+
+/* 移动端样式 */
+@media (max-width: 767px) {
+  .search-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-item {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100% !important;
+  }
+
+  .search-btn {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .n-data-table {
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .n-pagination {
+    float: none;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+}
+
+/* 分页样式优化 */
+.pagination-wrapper {
+  margin-top: 16px;
+  padding: 8px 0;
+  background: white;
+}
+
+/* 表格容器样式 */
+.table-container {
+  height: auto;
+  min-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 60px; /* 为分页留出空间 */
+}
+
+/* PC端分页样式 */
+@media (min-width: 768px) {
+  .pagination-wrapper {
+    float: right;
+    margin-top: 16px;
+    padding: 8px 0;
+  }
+}
+
+/* 移动端分页样式 */
+@media (max-width: 767px) {
+  .pagination-wrapper :deep(.n-pagination) {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+</style>

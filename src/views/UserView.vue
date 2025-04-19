@@ -397,19 +397,23 @@ onMounted(() => {
 
   .table-wrapper {
     margin-bottom: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .pagination-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .n-pagination {
     margin-bottom: 8px;
+    justify-content: center;
   }
 
   .create-drawer {
-    max-height: 80vh;
+    max-height: 85vh;
     border-radius: 12px 12px 0 0;
     overflow-y: auto;
   }
@@ -418,10 +422,37 @@ onMounted(() => {
     padding: 12px;
   }
 
+  .n-form-item {
+    margin-bottom: 12px;
+  }
+
   .drawer-actions {
     padding: 12px;
     position: sticky;
     bottom: 0;
+    background-color: #fff;
+    z-index: 1;
+  }
+
+  /* 表格优化 */
+  .n-data-table {
+    font-size: 13px;
+  }
+
+  .n-data-table th,
+  .n-data-table td {
+    padding: 8px 12px;
+  }
+
+  /* 操作按钮优化 */
+  .n-space {
+    flex-direction: column;
+    gap: 8px !important;
+  }
+
+  .n-space .n-button {
+    width: 100%;
+    margin-right: 0 !important;
   }
 }
 
@@ -430,8 +461,14 @@ onMounted(() => {
     font-size: 12px;
   }
 
+  .n-data-table th,
+  .n-data-table td {
+    padding: 6px 8px;
+  }
+
   .n-button {
     width: 100%;
+    font-size: 13px;
   }
 
   .drawer-actions {
@@ -442,6 +479,17 @@ onMounted(() => {
   .drawer-title {
     font-size: 16px;
     padding: 12px 12px 0;
+  }
+
+  .n-input,
+  .n-input-number,
+  .n-radio-group {
+    width: 100% !important;
+  }
+
+  .n-pagination {
+    overflow-x: auto;
+    padding-bottom: 8px;
   }
 }
 .points-input {
