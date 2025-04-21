@@ -92,6 +92,20 @@
           <n-form-item label="用户名" path="name">
             <n-input v-model:value="formData.name" placeholder="请输入用户名" />
           </n-form-item>
+          <span class="filter-label">项目筛选：</span>
+          <br />
+
+          <n-auto-complete
+            v-model:value="searchProjectSelectValue"
+            :input-props="{ autocomplete: 'disabled' }"
+            :options="searchProjectSelectOptions"
+            placeholder="项目选择"
+            clearable
+            style="width: 20vh"
+          />
+          <br />
+          <br />
+
           <n-form-item label="密码" path="password">
             <n-input
               type="password"
@@ -119,9 +133,37 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance, h } from "vue";
-import { NButton, useNotification, useDialog, NSpace } from "naive-ui";
-import { IosGitMerge } from "@vicons/ionicons4";
+import { ref, computed, onMounted, getCurrentInstance, h, watch } from "vue";
+import { NButton, useNotification, useDialog, NSpace, NTag } from "naive-ui";
+
+const projectData = ref([]);
+const searchProjectData = ref([]);
+const projectSelectValue = ref("");
+const searchProjectSelectValue = ref("");
+
+const searchProjectSelectOptions = computed(() => {
+  return searchProjectData.value.map((project) => ({
+    label: project.Name,
+    value: project.ID,
+  }));
+});
+
+watch(searchProjectSelectValue, (newValue) => {
+  if (newValue) searchProject(newValue, "search");
+  else searchProjectData.value = [];
+});
+// 项目搜索
+const searchProject = (key, t) => {
+  axios
+    .post("/api/project/search", { name: key })
+    .then((res) => {
+      if (t === "search") searchProjectData.value = res.data;
+      else projectData.value = res.data;
+    })
+    .catch((err) => {
+      projectData.value = [];
+    });
+};
 
 const createStatus = ref(false);
 const PointsStatus = ref(false);
@@ -132,14 +174,50 @@ const { proxy } = getCurrentInstance();
 const axios = proxy.$axios;
 
 const columns = [
-  { title: "用户名", key: "Name", width: 150 },
-  { title: "创建时间", key: "CreatedAt", width: 180 },
-  { title: "角色", key: "Role", width: 120 },
-  { title: "点数", key: "Points", width: 120 },
+  { title: "用户名", key: "name", width: 150 },
+  {
+    title: "所属项目",
+    key: "projects",
+    width: 250, // Increased width to accommodate multiple tags
+    render(row) {
+      const tagTypes = ["success"]; // Cycle through these types
+
+      if (!row.projects || row.projects.length === 0) {
+        return h(
+          NTag,
+          {
+            type: tagTypes[0], // Cycle through tag types
+            style: { marginRight: "5px" },
+          },
+          { default: () => "全局用户" }
+        );
+      }
+      return h(
+        NSpace,
+        { size: "small" },
+        {
+          default: () =>
+            row.projects.map((project, index) =>
+              h(
+                NTag,
+                {
+                  type: tagTypes[index % tagTypes.length], // Cycle through tag types
+                  style: { marginRight: "5px" },
+                },
+                { default: () => project }
+              )
+            ),
+        }
+      );
+    },
+  },
+  { title: "创建时间", key: "created_at", width: 180 },
+  { title: "角色", key: "role", width: 120 },
+  { title: "点数", key: "points", width: 120 },
   {
     title: "操作",
     key: "actions",
-    width: 200, // 增加宽度以容纳两个按钮
+    width: 200,
     fixed: "right",
     render(row) {
       return h(NSpace, null, {
@@ -215,15 +293,20 @@ const getUserList = async () => {
     const res = await axios.get("/api/user/getList", {
       params: { page: page.value, pageSize: pageSize.value },
     });
-    const userList = Array.isArray(res.data) ? res.data : res.data?.list || [];
+    const userList = Array.isArray(res.data) ? res.data : res.data?.data || [];
+    console.log(userList);
+
     data.value = userList.map((item) => ({
       ...item,
-      CreatedAt: item.CreatedAt
-        ? new Date(item.CreatedAt).toLocaleString()
+      created_at: item.created_at
+        ? new Date(item.created_at).toLocaleString()
         : "暂无",
-      Role:
-        item.Role == "0" ? "超级管理员" : item.Role == "1" ? "管理员" : "代理",
-      Points: item.Role <= 1 ? "无点数限制" : item.Points,
+      role:
+        item.role == "0" ? "超级管理员" : item.role == "1" ? "管理员" : "代理",
+      points: item.role <= 1 ? "无点数限制" : item.points,
+      projects: item.project_simple
+        ? item.project_simple.map((project) => project.name) // Store as array for rendering tags
+        : [], // Empty array for no projects
     }));
     itemCount.value = res.data.total || userList.length;
     tableKey.value++;
@@ -236,7 +319,7 @@ const getUserList = async () => {
 
 const deleteUser = async (row) => {
   try {
-    await axios.delete("/api/user/delete", { data: { id: row.ID } });
+    await axios.delete("/api/user/delete", { data: { id: row.id } });
     notify("success", "信息", `删除用户 ${row.Name} 成功`);
     getUserList();
   } catch (err) {
@@ -257,14 +340,14 @@ const deleteUserWarn = (row) => {
 const setPoints = (row) => {
   sumPoints.value = row.Points / 60 / 60 / 24;
   sumPoints.value = sumPoints.value;
-  pointsID.value = row.ID;
-  if (row.Role === "超级管理员" || row.Role === "管理员") {
+  pointsID.value = row.id;
+  if (row.role === "超级管理员" || row.role === "管理员") {
     notify("success", "信息", "该用户无点数限制");
     return;
   }
   PointsStatus.value = true;
 };
-const addPoints = async () => {
+const addPoints = async (userid) => {
   try {
     // 计算总点数
     const points =
@@ -321,7 +404,16 @@ const drawerPlacement = computed(() =>
   window.innerWidth < 768 ? "bottom" : "right"
 );
 const drawerWidth = computed(() => (window.innerWidth < 768 ? "100%" : 502));
+const updatePaginationPage = (newPage) => {
+  page.value = newPage;
+  getUserList();
+};
 
+const updatePaginationPageSize = (newSize) => {
+  pageSize.value = newSize;
+  page.value = 1; // 重置到第一页
+  getUserList();
+};
 onMounted(() => {
   getUserList();
 });

@@ -87,7 +87,10 @@ export function getMenuOptions(userRole) {
       (option) =>
         userRole.value <= 1 || // 小于或等于1展示所有
         option.key === "home" || // 大于1时，保留控制台
-        option.key === "card" // 保留卡密管理
+        option.key === "card" || // 保留卡密管理
+        option.key === "project" || // 保留卡密管理
+        option.key === "apikey" || // 保留卡密管理
+        option.key === "record" // 保留卡密管理
     )
   );
 }
