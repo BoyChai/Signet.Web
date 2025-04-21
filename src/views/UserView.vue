@@ -92,20 +92,6 @@
           <n-form-item label="用户名" path="name">
             <n-input v-model:value="formData.name" placeholder="请输入用户名" />
           </n-form-item>
-          <span class="filter-label">项目筛选：</span>
-          <br />
-
-          <n-auto-complete
-            v-model:value="searchProjectSelectValue"
-            :input-props="{ autocomplete: 'disabled' }"
-            :options="searchProjectSelectOptions"
-            placeholder="项目选择"
-            clearable
-            style="width: 20vh"
-          />
-          <br />
-          <br />
-
           <n-form-item label="密码" path="password">
             <n-input
               type="password"
@@ -120,6 +106,33 @@
               <n-radio value="2">代理</n-radio>
             </n-radio-group>
           </n-form-item>
+          <n-form-item label="项目选择" path="project_id">
+            <n-select
+              v-model:value="tempProjectId"
+              filterable
+              placeholder="选择项目"
+              :options="availableProjectOptions"
+              clearable
+              style="margin-bottom: 8px"
+              @update:value="handleProjectSelect"
+            />
+          </n-form-item>
+          <n-form-item label="已选项目">
+            <div
+              class="selected-tags"
+              style="display: flex; flex-wrap: wrap; gap: 8px"
+            >
+              <n-tag
+                v-for="projectId in formData.project_id"
+                :key="projectId"
+                type="success"
+                closable
+                @close="removeProjectTag(projectId)"
+              >
+                {{ getProjectName(projectId) }}
+              </n-tag>
+            </div>
+          </n-form-item>
         </n-form>
         <div class="drawer-actions">
           <n-button @click="createStatus = false">取消</n-button>
@@ -133,60 +146,99 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance, h, watch } from "vue";
+import { ref, computed, onMounted, getCurrentInstance, h, nextTick } from "vue";
 import { NButton, useNotification, useDialog, NSpace, NTag } from "naive-ui";
 
-const projectData = ref([]);
-const searchProjectData = ref([]);
-const projectSelectValue = ref("");
-const searchProjectSelectValue = ref("");
-
-const searchProjectSelectOptions = computed(() => {
-  return searchProjectData.value.map((project) => ({
-    label: project.Name,
-    value: project.ID,
-  }));
-});
-
-watch(searchProjectSelectValue, (newValue) => {
-  if (newValue) searchProject(newValue, "search");
-  else searchProjectData.value = [];
-});
-// 项目搜索
-const searchProject = (key, t) => {
-  axios
-    .post("/api/project/search", { name: key })
-    .then((res) => {
-      if (t === "search") searchProjectData.value = res.data;
-      else projectData.value = res.data;
-    })
-    .catch((err) => {
-      projectData.value = [];
-    });
-};
+const { proxy } = getCurrentInstance();
+const axios = proxy.$axios;
 
 const createStatus = ref(false);
 const PointsStatus = ref(false);
 const creating = ref(false);
 const tableKey = ref(0);
+const notification = useNotification();
+const dialog = useDialog();
 
-const { proxy } = getCurrentInstance();
-const axios = proxy.$axios;
+const searchProjectData = ref([]);
+const projectPage = ref(1);
+const projectPageSize = ref(10);
+const tempProjectId = ref(null);
+
+const notify = (type, title, text) => {
+  notification[type]({
+    content: title,
+    meta: text,
+    duration: 2500,
+    keepAliveOnHover: true,
+  });
+};
+
+// Compute available projects (exclude selected ones)
+const availableProjectOptions = computed(() => {
+  return searchProjectData.value
+    .filter((project) => !formData.value.project_id.includes(project.ID))
+    .map((project) => ({
+      label: project.Name,
+      value: project.ID,
+    }));
+});
+
+// Get project name by ID
+const getProjectName = (projectId) => {
+  const project = searchProjectData.value.find((p) => p.ID === projectId);
+  return project?.Name || "Unknown Project";
+};
+
+// Handle project selection
+const handleProjectSelect = (value) => {
+  if (value && !formData.value.project_id.includes(value)) {
+    formData.value.project_id.push(value);
+    tempProjectId.value = null;
+    nextTick(() => {
+      document.querySelector(".n-select")?.focus();
+    });
+  }
+};
+
+// Remove project tag
+const removeProjectTag = (projectId) => {
+  formData.value.project_id = formData.value.project_id.filter(
+    (id) => id !== projectId
+  );
+};
+
+// Fetch projects
+const fetchProjects = async () => {
+  try {
+    const res = await axios.get("/api/project/getList", {
+      params: {
+        page: projectPage.value,
+        pageSize: projectPageSize.value,
+      },
+    });
+    searchProjectData.value = res.data?.list || [];
+    if (!searchProjectData.value.length) {
+      notify("warning", "提示", "没有找到项目");
+    }
+  } catch (err) {
+    searchProjectData.value = [];
+    notify("error", "错误", err.response?.data?.msg || "获取项目列表失败");
+  }
+};
 
 const columns = [
   { title: "用户名", key: "name", width: 150 },
   {
     title: "所属项目",
     key: "projects",
-    width: 250, // Increased width to accommodate multiple tags
+    width: 250,
     render(row) {
-      const tagTypes = ["success"]; // Cycle through these types
-
+      const tagTypes = ["success"];
       if (!row.projects || row.projects.length === 0) {
         return h(
           NTag,
           {
-            type: tagTypes[0], // Cycle through tag types
+            type: tagTypes[0],
             style: { marginRight: "5px" },
           },
           { default: () => "全局用户" }
@@ -201,7 +253,7 @@ const columns = [
               h(
                 NTag,
                 {
-                  type: tagTypes[index % tagTypes.length], // Cycle through tag types
+                  type: tagTypes[index % tagTypes.length],
                   style: { marginRight: "5px" },
                 },
                 { default: () => project }
@@ -253,6 +305,11 @@ const data = ref([]);
 const page = ref(1);
 const pageSize = ref(10);
 const itemCount = ref(0);
+const sumPoints = ref(0);
+const dayPoints = ref(0);
+const weekPoints = ref(0);
+const monthPoints = ref(0);
+const pointsID = ref(0);
 
 const rowKey = (row) => row.ID;
 
@@ -260,33 +317,17 @@ const formData = ref({
   name: "",
   password: "",
   role: "2",
+  project_id: [],
 });
 
 const rules = {
   name: { required: true, message: "请输入用户名", trigger: "blur" },
   password: { required: true, message: "请输入密码", trigger: "blur" },
   role: { required: true, message: "请选择角色", trigger: "change" },
+  project_id: { required: false },
 };
 
 const formRef = ref(null);
-const notification = useNotification();
-const dialog = useDialog();
-
-// 创建点数变量
-const sumPoints = ref(0);
-const dayPoints = ref(0);
-const weekPoints = ref(0);
-const monthPoints = ref(0);
-const pointsID = ref(0);
-
-const notify = (type, title, text) => {
-  notification[type]({
-    content: title,
-    meta: text,
-    duration: 2500,
-    keepAliveOnHover: true,
-  });
-};
 
 const getUserList = async () => {
   try {
@@ -294,8 +335,6 @@ const getUserList = async () => {
       params: { page: page.value, pageSize: pageSize.value },
     });
     const userList = Array.isArray(res.data) ? res.data : res.data?.data || [];
-    console.log(userList);
-
     data.value = userList.map((item) => ({
       ...item,
       created_at: item.created_at
@@ -305,8 +344,8 @@ const getUserList = async () => {
         item.role == "0" ? "超级管理员" : item.role == "1" ? "管理员" : "代理",
       points: item.role <= 1 ? "无点数限制" : item.points,
       projects: item.project_simple
-        ? item.project_simple.map((project) => project.name) // Store as array for rendering tags
-        : [], // Empty array for no projects
+        ? item.project_simple.map((project) => project.name)
+        : [],
     }));
     itemCount.value = res.data.total || userList.length;
     tableKey.value++;
@@ -339,7 +378,6 @@ const deleteUserWarn = (row) => {
 
 const setPoints = (row) => {
   sumPoints.value = row.Points / 60 / 60 / 24;
-  sumPoints.value = sumPoints.value;
   pointsID.value = row.id;
   if (row.role === "超级管理员" || row.role === "管理员") {
     notify("success", "信息", "该用户无点数限制");
@@ -347,26 +385,19 @@ const setPoints = (row) => {
   }
   PointsStatus.value = true;
 };
-const addPoints = async (userid) => {
+
+const addPoints = async () => {
   try {
-    // 计算总点数
     const points =
       dayPoints.value * 24 * 60 * 60 +
       weekPoints.value * 24 * 60 * 60 * 7 +
       monthPoints.value * 24 * 60 * 60 * 30;
-
-    // 调用后端接口
-    const response = await axios.post("/api/user/add/points", {
-      userid: pointsID.value, // 使用传入的行数据中的用户ID
+    await axios.post("/api/user/add/points", {
+      userid: pointsID.value,
       points: points,
     });
-
     notify("success", "成功", `已把对应用户点数设置为 ${points} 点`);
-
-    // 刷新用户列表
     getUserList();
-
-    // 重置点数输入
     dayPoints.value = 0;
     weekPoints.value = 0;
     monthPoints.value = 0;
@@ -384,26 +415,27 @@ const createUser = async () => {
       name: formData.value.name,
       pass: formData.value.password,
       role: formData.value.role,
+      project_id: formData.value.project_id,
     });
     notify("success", "信息", "创建用户成功");
     createStatus.value = false;
-    formData.value = { name: "", password: "", role: "2" };
+    formData.value = { name: "", password: "", role: "2", project_id: [] };
     getUserList();
   } catch (err) {
-    notify("error", "错误", err.message);
+    notify("error", "错误", err.response?.data?.message || err.message);
   } finally {
     creating.value = false;
   }
 };
 
 const pageCount = computed(() => Math.ceil(itemCount.value / pageSize.value));
-
 const tableHeight = computed(() => (window.innerWidth < 768 ? 400 : 620));
 const scrollX = computed(() => (window.innerWidth < 768 ? 600 : undefined));
 const drawerPlacement = computed(() =>
   window.innerWidth < 768 ? "bottom" : "right"
 );
 const drawerWidth = computed(() => (window.innerWidth < 768 ? "100%" : 502));
+
 const updatePaginationPage = (newPage) => {
   page.value = newPage;
   getUserList();
@@ -411,11 +443,17 @@ const updatePaginationPage = (newPage) => {
 
 const updatePaginationPageSize = (newSize) => {
   pageSize.value = newSize;
-  page.value = 1; // 重置到第一页
+  page.value = 1;
   getUserList();
 };
+
+const handlePaginationCheck = () => {
+  // Implement if needed
+};
+
 onMounted(() => {
   getUserList();
+  fetchProjects();
 });
 </script>
 
@@ -477,6 +515,19 @@ onMounted(() => {
   background-color: #fff;
 }
 
+.points-input {
+  margin-top: 10px;
+}
+
+.selected-tags {
+  min-height: 32px;
+  padding: 4px 0;
+}
+
+.n-tag {
+  margin: 4px 0;
+}
+
 @media (max-width: 768px) {
   .user-management-container {
     padding: 8px;
@@ -526,7 +577,6 @@ onMounted(() => {
     z-index: 1;
   }
 
-  /* 表格优化 */
   .n-data-table {
     font-size: 13px;
   }
@@ -536,7 +586,6 @@ onMounted(() => {
     padding: 8px 12px;
   }
 
-  /* 操作按钮优化 */
   .n-space {
     flex-direction: column;
     gap: 8px !important;
@@ -575,7 +624,8 @@ onMounted(() => {
 
   .n-input,
   .n-input-number,
-  .n-radio-group {
+  .n-radio-group,
+  .n-select {
     width: 100% !important;
   }
 
@@ -583,8 +633,5 @@ onMounted(() => {
     overflow-x: auto;
     padding-bottom: 8px;
   }
-}
-.points-input {
-  margin-top: 10px;
 }
 </style>
